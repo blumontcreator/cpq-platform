@@ -1,0 +1,13 @@
+export { seriesExtractor } from "./series.extractor";
+export { colorExtractor } from "./color.extractor";
+export { finishExtractor } from "./finish.extractor";
+export { materialExtractor } from "./material.extractor";
+export { motorizationExtractor } from "./motorization.extractor";
+export { mountingExtractor } from "./mounting.extractor";
+export { dimensionsExtractor } from "./dimensions.extractor";
+export { sizeExtractor } from "./size.extractor";
+export { voltageExtractor } from "./voltage.extractor";
+export { packagingExtractor } from "./packaging.extractor";
+export { regionExtractor } from "./region.extractor";
+export { tierExtractor } from "./tier.extractor";
+export { accessoriesExtractor } from "./accessories.extractor";

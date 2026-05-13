@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  imports  SupplierImport[]
+  variants ProductVariant[]
+  prices   ProductPrice[]
+}
+
+enum SupplierImportStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ImportSourceKind {
+  XLSX
+  CSV
+}
+
+/// One versioned ingest of supplier file(s); supports audit and re-runs.
+model SupplierImport {
+  id           String               @id @default(cuid())
+  supplierId   String
+  supplier     Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  version      Int
+  sourceKey    String
+  sourceKind   ImportSourceKind
+  status       SupplierImportStatus @default(PENDING)
+  rowCount     Int                  @default(0)
+  parsedCount  Int                  @default(0)
+  skippedCount Int                  @default(0)
+  errorCount   Int                  @default(0)
+  metadata     Json?
+  startedAt    DateTime             @default(now())
+  completedAt  DateTime?
+  errorMessage String?
+
+  rows SupplierImportRow[]
+
+  @@unique([supplierId, version])
+  @@index([supplierId, sourceKey])
+}
+
+/// Immutable raw + derived pointers per spreadsheet/CSV row.
+model SupplierImportRow {
+  id           String         @id @default(cuid())
+  importId     String
+  import       SupplierImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+  sheetName    String?
+  rowIndex     Int
+  raw          Json
+  supplierSku  String?
+  supplierName String?
+  parseWarnings Json?
+  parseErrors   Json?
+  normalized    Json?
+
+  productId String?
+  product   Product?        @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([importId])
+  @@index([supplierSku])
+}
+
+/// Supplier-agnostic catalog product (normalized identity).
+model Product {
+  id            String   @id @default(cuid())
+  canonicalName String
+  description   String?
+  attributes    Json?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  variants   ProductVariant[]
+  importRows SupplierImportRow[]
+  prices     ProductPrice[]
+}
+
+/// Sellable SKU / option; ties supplier identity without polluting global Product.
+model ProductVariant {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  supplierSku String?
+  /// Stable internal key for CPQ + integrations.
+  sku         String    @unique
+  label       String?
+  attributes  Json?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  importRows    SupplierImportRow[]
+  prices        ProductPrice[]
+  quoteLines    QuoteLine[]
+  calculations  PricingCalculation[]
+
+  @@unique([supplierId, supplierSku])
+  @@index([productId])
+}
+
+enum PriceKind {
+  LIST
+  COST
+  NET
+  MSRP
+}
+
+/// Price facts; engines can supersede or layer rules later.
+model ProductPrice {
+  id         String         @id @default(cuid())
+  supplierId String?
+  supplier   Supplier?      @relation(fields: [supplierId], references: [id])
+  productId  String?
+  product    Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId  String?
+  variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  currency   String         @default("USD")
+  amount     Decimal        @db.Decimal(16, 4)
+  priceType  PriceKind      @default(LIST)
+  unit       String?
+  validFrom  DateTime?
+  validTo    DateTime?
+  metadata   Json?
+  createdAt  DateTime       @default(now())
+
+  @@index([supplierId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+// ── Pricing engine models ────────────────────────────────────────────────────
+
+/// Saved pricing configuration: cost layers + strategy + margin policy.
+/// Scoped by supplier / channel / customer precedence.
+model PricingPolicy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  /// Scope precedence: global < supplier < channel < customer
+  supplierId  String?
+  channel     String?
+  customerId  String?
+  /// Serialised CostLayer[]
+  costLayers  Json
+  /// Serialised PricingStrategy
+  strategy    Json
+  /// Serialised MarginPolicy
+  marginPolicy Json
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  calculations PricingCalculation[]
+
+  @@index([supplierId])
+  @@index([channel])
+  @@index([customerId])
+}
+
+/// Immutable audit record of a single engine calculation run.
+model PricingCalculation {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  policyId  String?
+  policy    PricingPolicy? @relation(fields: [policyId], references: [id])
+  /// Serialised PricingContext
+  context   Json
+  /// Serialised PricingResult
+  result    Json
+  createdAt DateTime       @default(now())
+
+  @@index([variantId])
+  @@index([policyId])
+}
+
+// ── Quoting models ────────────────────────────────────────────────────────────
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Quote {
+  id         String      @id @default(cuid())
+  reference  String      @unique
+  status     QuoteStatus @default(DRAFT)
+  currency   String      @default("USD")
+  notes      String?
+  validUntil DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  /// Serialised QuoteGraph — the full node/edge graph for this quote.
+  graph      Json?
+
+  lines        QuoteLine[]
+  evaluations  QuoteEvaluationRecord[]
+  scenarioRuns ScenarioRun[]
+  outcome      QuoteOutcome?
+  workflow     WorkflowInstance?
+}
+
+/// Immutable audit log of a full graph evaluation run.
+model QuoteEvaluationRecord {
+  id        String   @id @default(cuid())
+  quoteId   String
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  /// Serialised QuoteEvaluation
+  evaluation Json
+  createdAt DateTime @default(now())
+
+  @@index([quoteId])
+}
+
+/// Immutable audit record of a simulation / optimisation run.
+model ScenarioRun {
+  id        String   @id @default(cuid())
+  quoteId   String
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  name      String
+  /// e.g. AGGRESSIVE | BALANCED | PREMIUM | STRATEGIC
+  strategy  String
+  /// Serialised OptimizationResult
+  result    Json
+  createdAt DateTime @default(now())
+
+  @@index([quoteId])
+}
+
+model QuoteLine {
+  id        String         @id @default(cuid())
+  quoteId   String
+  quote     Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Decimal        @db.Decimal(12, 3)
+  unitPrice Decimal        @db.Decimal(12, 2)
+  createdAt DateTime       @default(now())
+
+  @@index([quoteId])
+}
+
+// ── Commercial Intelligence models ──────────────────────────────────────────
+
+/// Immutable commercial event log — the source of truth for all intelligence.
+model CommercialEvent {
+  id         String   @id @default(cuid())
+  /// e.g. quote_won, supplier_delay, customer_change_request
+  kind       String
+  quoteId    String?
+  customerId String?
+  supplierId String?
+  variantSku String?
+  /// Event-specific structured payload (validated at ingestion time).
+  payload    Json
+  occurredAt DateTime @default(now())
+  metadata   Json?
+
+  @@index([kind])
+  @@index([quoteId])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([occurredAt])
+}
+
+/// Commercial outcome for a quote — updated as events arrive.
+model QuoteOutcome {
+  id                String    @id @default(cuid())
+  quoteId           String    @unique
+  quote             Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  /// WON | LOST | EXPIRED | PENDING
+  outcome           String    @default("PENDING")
+  quotedRevenue     Decimal   @db.Decimal(14, 2)
+  quotedMarginPct   Decimal   @db.Decimal(6, 3)
+  quotedDiscount    Decimal   @default(0) @db.Decimal(6, 3)
+  realizedRevenue   Decimal?  @db.Decimal(14, 2)
+  realizedMarginPct Decimal?  @db.Decimal(6, 3)
+  realizedDiscount  Decimal?  @db.Decimal(6, 3)
+  strategy          String?
+  channel           String?
+  customerId        String?
+  quotedAt          DateTime
+  closedAt          DateTime?
+  cycleDays         Int?
+  lossReason        String?
+  competitorPrice   Decimal?  @db.Decimal(14, 2)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([outcome])
+  @@index([customerId])
+  @@index([strategy])
+  @@index([quotedAt])
+}
+
+/// Individual supplier delivery event — feed for reliability scoring.
+model SupplierPerformanceRecord {
+  id               String   @id @default(cuid())
+  supplierId       String
+  variantSku       String?
+  promisedLeadDays Int?
+  actualLeadDays   Int?
+  /// actualLeadDays - promisedLeadDays (negative = early)
+  delayDays        Int?
+  wasDelayed       Boolean  @default(false)
+  hadIssue         Boolean  @default(false)
+  issueDescription String?
+  quoteId          String?
+  occurredAt       DateTime @default(now())
+
+  @@index([supplierId])
+  @@index([occurredAt])
+}
+
+/// Individual customer negotiation / behaviour event.
+model CustomerBehaviorRecord {
+  id                String   @id @default(cuid())
+  customerId        String
+  eventKind         String
+  originalValue     Decimal? @db.Decimal(14, 2)
+  negotiatedValue   Decimal? @db.Decimal(14, 2)
+  discountRequested Decimal? @db.Decimal(6, 3)
+  discountGranted   Decimal? @db.Decimal(6, 3)
+  quoteId           String?
+  occurredAt        DateTime @default(now())
+
+  @@index([customerId])
+  @@index([occurredAt])
+}
+
+// ── Workflow & Operational Orchestration models ─────────────────────────────
+
+/// Active workflow instance — one per quote, tracks the operational lifecycle.
+model WorkflowInstance {
+  id            String   @id @default(cuid())
+  quoteId       String   @unique
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  /// Current state in the quote lifecycle state machine.
+  currentState  String
+  previousState String?
+  /// ACTIVE | PAUSED | COMPLETED | CANCELLED | STALLED
+  status        String   @default("ACTIVE")
+  /// Arbitrary workflow context (margins, customer tier, risk scores, etc.)
+  context       Json
+  /// Immutable ordered log of WorkflowTransitionRecord objects.
+  history       Json     @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  approvals     ApprovalRequest[]
+
+  @@index([currentState])
+  @@index([status])
+}
+
+/// Approval request created when a workflow transition requires sign-off.
+model ApprovalRequest {
+  id             String           @id @default(cuid())
+  workflowId     String
+  workflow       WorkflowInstance @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  quoteId        String
+  stage          Int              @default(1)
+  /// MARGIN | DISCOUNT | STRATEGIC_CUSTOMER | HIGH_VALUE | OVERRIDE
+  kind           String
+  requiredRole   String
+  requestedBy    String?
+  /// PENDING | APPROVED | REJECTED | ESCALATED | EXPIRED
+  status         String           @default("PENDING")
+  decisionBy     String?
+  decisionAt     DateTime?
+  decisionNote   String?
+  overrideReason String?
+  expiresAt      DateTime?
+  /// Snapshot of context at request time for audit.
+  context        Json
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([workflowId])
+  @@index([quoteId])
+  @@index([status])
+}

@@ -1,0 +1,70 @@
+/** Tokens that indicate a motorized (automated) product. */
+export const MOTORIZED_TOKENS: readonly string[] = [
+  "motor",
+  "motorized",
+  "motorised",
+  "automated",
+  "electric",
+  "automatic",
+  "auto",
+  "powered",
+  "smart",
+  "rts",         // Somfy RTS radio technology
+  "io",          // Somfy io
+  "zwave",
+  "z-wave",
+  "zigbee",
+  "wifi",
+  "wi-fi",
+  "bluetooth",
+  "alexa",
+  "smartthings",
+  "remote",
+  "app",
+];
+
+/** Tokens that indicate a manual / non-motorized product. */
+export const MANUAL_TOKENS: readonly string[] = [
+  "cordless",
+  "corded",
+  "cord",
+  "manual",
+  "spring",
+  "continuous loop",
+  "loop",
+  "wand",
+  "chain",
+  "pull",
+];
+
+/** Maps a matched token to a canonical motorization kind label. */
+export const MOTORIZATION_KIND_DICT: Record<string, string> = {
+  motor: "Motorized",
+  motorized: "Motorized",
+  motorised: "Motorized",
+  automated: "Motorized",
+  electric: "Motorized",
+  automatic: "Motorized",
+  auto: "Motorized",
+  powered: "Motorized",
+  smart: "Motorized",
+  rts: "RTS",
+  io: "Somfy io",
+  "z-wave": "Z-Wave",
+  zwave: "Z-Wave",
+  zigbee: "Zigbee",
+  wifi: "Wi-Fi",
+  "wi-fi": "Wi-Fi",
+  bluetooth: "Bluetooth",
+  remote: "Motorized",
+  cordless: "Cordless",
+  corded: "Corded",
+  cord: "Corded",
+  manual: "Manual",
+  spring: "Spring",
+  "continuous loop": "Continuous Loop",
+  loop: "Loop",
+  wand: "Wand",
+  chain: "Chain",
+  pull: "Pull",
+};

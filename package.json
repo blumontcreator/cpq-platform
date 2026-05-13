@@ -1,0 +1,46 @@
+{
+  "name": "cpq-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "import:a400": "tsx scripts/import-a400.ts",
+    "price:a400": "tsx scripts/price-a400.ts",
+    "quote:demo": "tsx scripts/quote-demo.ts",
+    "simulate:demo": "tsx scripts/simulation-demo.ts",
+    "intelligence:demo": "tsx scripts/intelligence-demo.ts",
+    "workflow:demo": "tsx scripts/workflow-demo.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "csv-parse": "^6.2.1",
+    "dotenv": "^17.4.2",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/xlsx": "^0.0.35",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "postcss": "^8.4.49",
+    "prisma": "^6.19.0",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}
