@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { getRevisions } from "@/modules/negotiation";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +21,11 @@ const REASON_COLORS: Record<string, "zinc" | "blue" | "yellow" | "green" | "purp
 
 export default async function RevisionsPage({ params }: Props) {
   const { quoteId } = await params;
-  const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
+  const scoped = await requireScopedPrisma();
+  const quote = await scoped.quotes.findUnique({ where: { id: quoteId } });
   if (!quote) notFound();
 
-  const revisions = await getRevisions(prisma, quoteId);
+  const revisions = await getRevisions(scoped.prisma, quoteId);
 
   return (
     <div className="p-6 space-y-6">

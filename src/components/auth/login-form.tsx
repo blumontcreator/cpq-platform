@@ -6,7 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 
 const ERROR_COPY: Record<string, string> = {
   config:
-    "Authentication is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    "Authentication is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY).",
 };
 
 interface Props {

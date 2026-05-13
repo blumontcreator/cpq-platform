@@ -12,7 +12,16 @@ interface Props {
 
 export default async function LoginPage({ searchParams }: Props) {
   const ctx = await getConsoleOperatorContext();
-  if (ctx) redirect("/catalog");
+  if (ctx) {
+    if (
+      ctx.organizationId &&
+      ctx.organizationSlug &&
+      ctx.organizationRole !== undefined
+    ) {
+      redirect("/catalog");
+    }
+    redirect("/setup");
+  }
 
   const params = await searchParams;
   return (

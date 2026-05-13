@@ -252,7 +252,10 @@ export async function executeCommercialLifecycle(
 
   const t = (msg: string) => { trace.push(`[${Date.now() - startMs}ms] ${msg}`); };
 
-  log.info("Lifecycle execution started", { opportunityId: context.opportunityId });
+  log.info("Lifecycle execution started", {
+    opportunityId: context.opportunityId,
+    ...(context.organizationId ? { organizationId: context.organizationId } : {}),
+  });
 
   // ── 1. Load opportunity ────────────────────────────────────────────────
   t("Loading opportunity");
@@ -413,7 +416,10 @@ export async function executeCommercialLifecycle(
       currency:  quote.currency,
       ownerId:   quote.ownerId ?? undefined,
       channel:   quote.channel ?? undefined,
-    }, { userId: context.operatorUserId }),
+    }, {
+      userId: context.operatorUserId,
+      ...(context.organizationId ? { organizationId: context.organizationId } : {}),
+    }),
   );
 
   await eventBus.emit(
@@ -428,7 +434,10 @@ export async function executeCommercialLifecycle(
       violationCount:       evaluation.violations.length,
       recommendationCount:  evaluation.recommendations.length,
       confidence:           evaluation.confidence,
-    }, { userId: context.operatorUserId }),
+    }, {
+      userId: context.operatorUserId,
+      ...(context.organizationId ? { organizationId: context.organizationId } : {}),
+    }),
   );
 
   const durationMs = Date.now() - startMs;
@@ -444,6 +453,7 @@ export async function executeCommercialLifecycle(
     durationMs,
     overallScore: scores.overallScore,
     approvalCount: governanceCheck.approvalRequirements.length,
+    ...(context.organizationId ? { organizationId: context.organizationId } : {}),
   });
 
   return {
@@ -557,7 +567,10 @@ export async function closeQuoteOutcome(
         marginRetained:    input.realizedMarginPct ? input.realizedMarginPct / Math.max(quotedMarginPct, 0.01) : 1,
         strategy:          input.strategy,
         customerId:        input.customerId,
-      }, { userId: input.operatorUserId }),
+      }, {
+        userId: input.operatorUserId,
+        ...(input.organizationId ? { organizationId: input.organizationId } : {}),
+      }),
     );
     eventsEmitted.push("QuoteWon");
   } else if (input.outcome === "LOST") {
@@ -569,12 +582,19 @@ export async function closeQuoteOutcome(
         quotedMarginPct,
         strategy:          input.strategy,
         customerId:        input.customerId,
-      }, { userId: input.operatorUserId }),
+      }, {
+        userId: input.operatorUserId,
+        ...(input.organizationId ? { organizationId: input.organizationId } : {}),
+      }),
     );
     eventsEmitted.push("QuoteLost");
   }
 
-  log.info("Quote outcome closed", { quoteId: input.quoteId, outcome: input.outcome });
+  log.info("Quote outcome closed", {
+    quoteId: input.quoteId,
+    outcome: input.outcome,
+    ...(input.organizationId ? { organizationId: input.organizationId } : {}),
+  });
 
   return {
     outcomeId:              outcome.id,

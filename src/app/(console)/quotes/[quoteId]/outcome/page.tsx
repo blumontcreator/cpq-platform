@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
 import { CloseOutcomeForm } from "@/components/console/lifecycle-form";
@@ -12,7 +12,8 @@ interface Props { params: Promise<{ quoteId: string }> }
 
 export default async function OutcomePage({ params }: Props) {
   const { quoteId } = await params;
-  const quote = await prisma.quote.findUnique({
+  const scoped = await requireScopedPrisma();
+  const quote = await scoped.quotes.findUnique({
     where:   { id: quoteId },
     include: {
       evaluations: { orderBy: { createdAt: "desc" }, take: 1 },

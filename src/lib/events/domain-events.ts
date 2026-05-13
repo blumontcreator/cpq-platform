@@ -25,6 +25,8 @@ export interface DomainEventMetadata {
   eventId: string;
   /** ISO timestamp when the event occurred. */
   occurredAt: string;
+  /** Tenant (organization) in which this event occurred. */
+  organizationId?: string;
   /** Links events that belong to the same user request. */
   correlationId?: string;
   /** The eventId that caused this event (for causal chains). */

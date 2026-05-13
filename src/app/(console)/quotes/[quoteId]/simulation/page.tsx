@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { runOptimizationAction } from "../../../actions/simulation.actions";
 import { QuoteTabs } from "@/components/console/quote-tabs";
 import { RunSimulationForm } from "@/components/console/run-simulation-form";
@@ -12,14 +12,16 @@ import type { OptimizationResult } from "@/modules/simulation/types/optimization
 
 export async function generateMetadata({ params }: { params: Promise<{ quoteId: string }> }) {
   const { quoteId } = await params;
-  const q = await prisma.quote.findUnique({ where: { id: quoteId }, select: { reference: true } });
+  const scoped = await requireScopedPrisma();
+  const q = await scoped.quotes.findUnique({ where: { id: quoteId }, select: { reference: true } });
   return { title: `${q?.reference ?? quoteId} — Simulation — CPQ Console` };
 }
 
 async function getSimData(quoteId: string) {
+  const scoped = await requireScopedPrisma();
   const [quote, runs] = await Promise.all([
-    prisma.quote.findUnique({ where: { id: quoteId }, select: { id: true, reference: true, currency: true, graph: true } }),
-    prisma.scenarioRun.findMany({
+    scoped.quotes.findUnique({ where: { id: quoteId }, select: { id: true, reference: true, currency: true, graph: true } }),
+    scoped.scenarioRuns.findMany({
       where: { quoteId },
       orderBy: { createdAt: "desc" },
       take: 8,

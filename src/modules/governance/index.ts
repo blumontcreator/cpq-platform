@@ -8,6 +8,7 @@
 // RBAC
 export type {
   CpqRole,
+  OrganizationMemberRole,
   Permission,
   OperatorContext,
   ApprovalKind,

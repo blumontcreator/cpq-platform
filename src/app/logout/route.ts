@@ -1,15 +1,35 @@
-import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import { createServerClient } from "@supabase/ssr";
+import type { CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/auth/env";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /logout — ends the Supabase session and clears auth cookies.
- */
-export async function GET(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-  const url = new URL("/login", request.url);
-  return NextResponse.redirect(url);
+/**
+ * GET /logout — ends the Supabase session and clears auth cookies on the redirect response.
+ * Cookie mutations must target the returned `NextResponse` so browsers receive Set-Cookie.
+ */
+export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  const redirectUrl = new URL("/login", request.url);
+  const response = NextResponse.redirect(redirectUrl);
+
+  const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet: CookieToSet[]) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
+
+  await supabase.auth.signOut();
+  return response;
 }

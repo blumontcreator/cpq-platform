@@ -20,6 +20,8 @@ export interface LiveQuoteContext {
   items: QuoteItemRequest[];
   currency?: string;
   operatorUserId: string;
+  /** Active tenant; included on emitted domain event metadata when set. */
+  organizationId?: string;
 }
 
 /** Scores computed by the lifecycle orchestrator for commercial decision support. */
@@ -83,6 +85,8 @@ export interface CloseOutcomeInput {
   customerId?: string;
   operatorUserId: string;
   notes?: string;
+  /** Active tenant; included on emitted domain event metadata when set. */
+  organizationId?: string;
 }
 
 export interface OutcomeResult {

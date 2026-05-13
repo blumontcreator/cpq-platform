@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { createQuote } from "../actions/quote.actions";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
@@ -8,7 +8,8 @@ import { Badge, statusBadge } from "@/components/ui/badge";
 export const metadata = { title: "Quotes — CPQ Console" };
 
 async function getQuotes() {
-  return prisma.quote.findMany({
+  const scoped = await requireScopedPrisma();
+  return scoped.quotes.findMany({
     include: {
       _count: { select: { lines: true, evaluations: true, scenarioRuns: true } },
       outcome: { select: { outcome: true, realizedMarginPct: true } },

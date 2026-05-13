@@ -5,9 +5,9 @@
  * operations. Roles are additive but scoped — every role can only do what its
  * permission set explicitly grants.
  */
-import type { CpqRole } from "@prisma/client";
+import type { CpqRole, OrganizationMemberRole } from "@prisma/client";
 
-export type { CpqRole };
+export type { CpqRole, OrganizationMemberRole };
 
 // ── Permissions ────────────────────────────────────────────────────────────
 
@@ -61,6 +61,11 @@ export interface OperatorContext {
   name?: string;
   /** Delegated permissions beyond the base role (e.g. temporary elevation). */
   additionalPermissions?: Permission[];
+  /** Prisma-backed tenant (present when the user has ≥1 org membership). */
+  organizationId?: string;
+  organizationSlug?: string;
+  organizationRole?: OrganizationMemberRole;
+  organizationName?: string;
 }
 
 // ── Approval authority ────────────────────────────────────────────────────

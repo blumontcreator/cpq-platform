@@ -1,8 +1,23 @@
 import type { OperatorContext } from "@/modules/governance/rbac";
+import { resolveOrganizationForUserId } from "@/lib/tenant/resolve-organization";
 import { isAuthConfigured } from "./env";
 import { createSupabaseServerClient } from "./supabase-server";
 import { syncAuthUserToPrisma } from "./sync-user";
 import { prisma } from "@/lib/prisma";
+
+function applyResolvedTenant(
+  base: OperatorContext,
+  tenant: Awaited<ReturnType<typeof resolveOrganizationForUserId>>,
+): OperatorContext {
+  if (!tenant) return base;
+  return {
+    ...base,
+    organizationId:   tenant.id,
+    organizationSlug: tenant.slug,
+    organizationRole: tenant.role,
+    organizationName: tenant.name,
+  };
+}
 
 /**
  * Resolves the authenticated Supabase user to an `OperatorContext` for RBAC.
@@ -25,12 +40,15 @@ export async function getConsoleOperatorContext(): Promise<OperatorContext | nul
 
   if (!dbUser.active) return null;
 
-  return {
+  const base: OperatorContext = {
     userId: dbUser.id,
     role:   dbUser.role,
     email:  dbUser.email,
     name:   dbUser.name ?? undefined,
   };
+
+  const tenant = await resolveOrganizationForUserId(dbUser.id);
+  return applyResolvedTenant(base, tenant);
 }
 
 /**
@@ -49,10 +67,12 @@ export async function getConsoleOperatorContextStrict(): Promise<OperatorContext
   });
   if (!dbUser?.active) return null;
 
-  return {
+  const base: OperatorContext = {
     userId: dbUser.id,
     role:   dbUser.role,
     email:  dbUser.email,
     name:   dbUser.name ?? undefined,
   };
+  const tenant = await resolveOrganizationForUserId(dbUser.id);
+  return applyResolvedTenant(base, tenant);
 }

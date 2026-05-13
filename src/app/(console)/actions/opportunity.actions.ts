@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { requireConsoleAuth } from "@/lib/auth/guards";
 import { createOpportunity, closeOpportunity } from "@/modules/opportunity";
 import { executeCommercialLifecycle } from "@/modules/lifecycle";
@@ -10,6 +11,7 @@ import { eventBus } from "@/lib/events";
 eventBus.attachPersistence(prisma);
 
 export async function createOpportunityAction(formData: FormData): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const operator = await requireConsoleAuth();
   const customerName    = (formData.get("customerName") as string)?.trim();
   const customerId      = (formData.get("customerId")   as string)?.trim() || `CUS-${Date.now()}`;
@@ -25,7 +27,7 @@ export async function createOpportunityAction(formData: FormData): Promise<void>
 
   if (!customerName) return;
 
-  await createOpportunity(prisma, {
+  await createOpportunity(scoped.prisma, {
     customerName,
     customerId,
     salesOwnerId,
@@ -40,6 +42,7 @@ export async function createOpportunityAction(formData: FormData): Promise<void>
 }
 
 export async function executeLifecycleAction(formData: FormData): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const operator = await requireConsoleAuth();
   const opportunityId = formData.get("opportunityId") as string;
   const skusRaw       = (formData.get("skus") as string)?.split(",").map((s) => s.trim()).filter(Boolean);
@@ -50,6 +53,7 @@ export async function executeLifecycleAction(formData: FormData): Promise<void> 
     opportunityId,
     items: skusRaw.map((sku) => ({ sku, quantity: 1 })),
     operatorUserId: operator.userId,
+    organizationId: scoped.organizationId,
   });
 
   revalidatePath(`/opportunities/${opportunityId}`);
@@ -57,10 +61,11 @@ export async function executeLifecycleAction(formData: FormData): Promise<void> 
 }
 
 export async function closeOpportunityAction(formData: FormData): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const id      = formData.get("opportunityId") as string;
   const outcome = formData.get("outcome") as "WON" | "LOST" | "ABANDONED";
   if (!id || !outcome) return;
-  await closeOpportunity(prisma, id, outcome);
+  await closeOpportunity(scoped.prisma, id, outcome);
   revalidatePath(`/opportunities/${id}`);
   revalidatePath("/opportunities");
 }

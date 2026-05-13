@@ -62,7 +62,10 @@ export class EventBus {
       try {
         await appendEvent(this.prisma, event, { markProcessed: false });
       } catch (err) {
-        log.error("Failed to persist domain event", err, { eventType: event.type });
+        log.error("Failed to persist domain event", err, {
+          eventType: event.type,
+          organizationId: event.metadata.organizationId,
+        });
       }
     }
 
@@ -80,7 +83,10 @@ export class EventBus {
     for (const r of results) {
       if (r.status === "rejected") {
         errors++;
-        log.error("Event handler error", r.reason, { eventType: event.type });
+        log.error("Event handler error", r.reason, {
+          eventType: event.type,
+          organizationId: event.metadata.organizationId,
+        });
       }
     }
 
@@ -94,6 +100,7 @@ export class EventBus {
     log.debug("Event emitted", {
       eventType: event.type,
       aggregateId: event.aggregateId,
+      organizationId: event.metadata.organizationId,
       handlerCount: allHandlers.length,
       durationMs,
     });

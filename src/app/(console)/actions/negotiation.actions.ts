@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { requireConsoleAuth } from "@/lib/auth/guards";
 import {
   recordNegotiationEvent,
@@ -13,6 +13,7 @@ export async function recordNegotiationEventAction(
   quoteId: string,
   formData: FormData,
 ): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const kind             = formData.get("kind") as NegotiationEventKind;
   const requestedValue   = formData.get("requestedValue")   ? parseFloat(formData.get("requestedValue") as string) : undefined;
   const requestedDiscount = formData.get("requestedDiscount") ? parseFloat(formData.get("requestedDiscount") as string) / 100 : undefined;
@@ -23,7 +24,7 @@ export async function recordNegotiationEventAction(
 
   if (!quoteId || !kind) return;
 
-  await recordNegotiationEvent(prisma, {
+  await recordNegotiationEvent(scoped.prisma, {
     quoteId, kind, requestedValue, requestedDiscount,
     grantedValue, grantedDiscount,
     concessionNote: concessionNote || undefined,
@@ -37,17 +38,18 @@ export async function createRevisionAction(
   quoteId: string,
   formData: FormData,
 ): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const reason    = (formData.get("reason") as string) || "INTERNAL_REVISION";
   const changeNote = formData.get("changeNote") as string | undefined;
   const changedBy  = formData.get("changedBy") as string | undefined;
 
-  const quote = await prisma.quote.findUnique({
+  const quote = await scoped.quotes.findUnique({
     where:  { id: quoteId },
     select: { graph: true },
   });
   if (!quote) return;
 
-  await createRevision(prisma, {
+  await createRevision(scoped.prisma, {
     quoteId,
     reason: reason as Parameters<typeof createRevision>[1]["reason"],
     snapshot: quote.graph ?? {},
@@ -62,6 +64,7 @@ export async function closeOutcomeAction(
   quoteId: string,
   formData: FormData,
 ): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const operator = await requireConsoleAuth();
   const outcome         = formData.get("outcome") as "WON" | "LOST" | "EXPIRED" | "PARTIALLY_WON";
   const realizedRevenue = formData.get("realizedRevenue")   ? parseFloat(formData.get("realizedRevenue") as string) : undefined;
@@ -76,7 +79,8 @@ export async function closeOutcomeAction(
     lossReason: lossReason || undefined,
     competitorPrice,
     operatorUserId: operator.userId,
-  });
+    organizationId: scoped.organizationId,
+  }, scoped.prisma);
 
   revalidatePath(`/quotes/${quoteId}/outcome`);
   revalidatePath(`/quotes/${quoteId}`);

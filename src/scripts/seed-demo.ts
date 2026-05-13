@@ -35,9 +35,72 @@ const DEMO = {
   CUST_ACME:           "DEMO_CUST_ACME",
   CUST_NORDTECH:       "DEMO_CUST_NORDTECH",
   CUST_MEGACORP:       "DEMO_CUST_MEGACORP",
-  USER_ALICE:          "DEMO_USER_ALICE",
-  USER_BOB:            "DEMO_USER_BOB",
+  ORG_SLUG:            "demo",
 };
+
+async function seedOrganizationAndDemoUsers() {
+  log.info("Seeding organization and demo users...");
+
+  const org = await prisma.organization.upsert({
+    where:  { slug: DEMO.ORG_SLUG },
+    update: { name: "Demo Organization" },
+    create: {
+      slug: DEMO.ORG_SLUG,
+      name: "Demo Organization",
+    },
+  });
+
+  const alice = await prisma.user.upsert({
+    where:  { email: "demo-seed-alice@cpq.local" },
+    update: {},
+    create: {
+      email: "demo-seed-alice@cpq.local",
+      name:  "Alice Demo",
+      role:  "SALES",
+    },
+  });
+
+  const bob = await prisma.user.upsert({
+    where:  { email: "demo-seed-bob@cpq.local" },
+    update: {},
+    create: {
+      email: "demo-seed-bob@cpq.local",
+      name:  "Bob Demo",
+      role:  "SALES",
+    },
+  });
+
+  await prisma.organizationMembership.upsert({
+    where: {
+      userId_organizationId: { userId: alice.id, organizationId: org.id },
+    },
+    update: { role: "ADMIN" },
+    create: {
+      userId:         alice.id,
+      organizationId: org.id,
+      role:           "ADMIN",
+    },
+  });
+
+  await prisma.organizationMembership.upsert({
+    where: {
+      userId_organizationId: { userId: bob.id, organizationId: org.id },
+    },
+    update: {},
+    create: {
+      userId:         bob.id,
+      organizationId: org.id,
+      role:           "MEMBER",
+    },
+  });
+
+  log.info("Organization seeded", {
+    organizationId: org.id,
+    aliceId:        alice.id,
+    bobId:          bob.id,
+  });
+  return { org, alice, bob };
+}
 
 async function seedSuppliers() {
   log.info("Seeding suppliers...");
@@ -158,19 +221,17 @@ async function seedCatalog(supplierId: string) {
   log.info("Catalog seeded", { products: products.length });
 }
 
-async function seedOpportunities() {
+async function seedOpportunities(ownerAliceId: string, ownerBobId: string) {
   log.info("Seeding opportunities...");
 
   const open = await prisma.opportunity.upsert({
     where:  { reference: DEMO.OPP_OPEN_REF },
-    update: {},
+    update: { salesOwnerId: ownerAliceId },
     create: {
       reference:         DEMO.OPP_OPEN_REF,
       customerName:      "Acme Industrial GmbH",
       customerId:        DEMO.CUST_ACME,
-      salesOwnerId:      DEMO.USER_ALICE,
-      channel:           "DIRECT",
-      expectedCloseDate: new Date(Date.now() + 30 * 86400000),
+      salesOwnerId:      ownerAliceId,
       targetMarginPct:   0.28,
       strategicPriority: "IMPORTANT",
       estimatedRevenue:  45000,
@@ -181,12 +242,12 @@ async function seedOpportunities() {
 
   const quoted = await prisma.opportunity.upsert({
     where:  { reference: DEMO.OPP_QUOTED_REF },
-    update: {},
+    update: { salesOwnerId: ownerBobId },
     create: {
       reference:         DEMO.OPP_QUOTED_REF,
       customerName:      "NordTech AS",
       customerId:        DEMO.CUST_NORDTECH,
-      salesOwnerId:      DEMO.USER_BOB,
+      salesOwnerId:      ownerBobId,
       channel:           "PARTNER",
       expectedCloseDate: new Date(Date.now() + 14 * 86400000),
       targetMarginPct:   0.32,
@@ -199,12 +260,12 @@ async function seedOpportunities() {
 
   const won = await prisma.opportunity.upsert({
     where:  { reference: DEMO.OPP_WON_REF },
-    update: {},
+    update: { salesOwnerId: ownerAliceId },
     create: {
       reference:         DEMO.OPP_WON_REF,
       customerName:      "MegaCorp Ltd.",
       customerId:        DEMO.CUST_MEGACORP,
-      salesOwnerId:      DEMO.USER_ALICE,
+      salesOwnerId:      ownerAliceId,
       channel:           "DIRECT",
       targetMarginPct:   0.35,
       strategicPriority: "MUST_WIN",
@@ -218,42 +279,43 @@ async function seedOpportunities() {
   return { open, quoted, won };
 }
 
-async function seedQuotes(opportunityIds: { open: string; quoted: string; won: string }) {
+async function seedQuotes(
+  opportunityIds: { open: string; quoted: string; won: string },
+  ownerAliceId: string,
+  ownerBobId: string,
+) {
   log.info("Seeding quotes...");
 
   const draft = await prisma.quote.upsert({
     where:  { reference: DEMO.QUOTE_DRAFT_REF },
-    update: {},
+    update: { ownerId: ownerAliceId },
     create: {
       reference:     DEMO.QUOTE_DRAFT_REF,
       currency:      "EUR",
       status:        "DRAFT",
-      ownerId:       DEMO.USER_ALICE,
-      opportunityId: opportunityIds.open,
+      ownerId:       ownerAliceId,
     },
   });
 
   const sent = await prisma.quote.upsert({
     where:  { reference: DEMO.QUOTE_SENT_REF },
-    update: {},
+    update: { ownerId: ownerBobId },
     create: {
       reference:     DEMO.QUOTE_SENT_REF,
       currency:      "EUR",
       status:        "SENT",
-      ownerId:       DEMO.USER_BOB,
-      opportunityId: opportunityIds.quoted,
+      ownerId:       ownerBobId,
     },
   });
 
   const accepted = await prisma.quote.upsert({
     where:  { reference: DEMO.QUOTE_ACCEPTED_REF },
-    update: {},
+    update: { ownerId: ownerAliceId },
     create: {
       reference:     DEMO.QUOTE_ACCEPTED_REF,
       currency:      "EUR",
       status:        "ACCEPTED",
-      ownerId:       DEMO.USER_ALICE,
-      opportunityId: opportunityIds.won,
+      ownerId:       ownerAliceId,
     },
   });
 
@@ -287,21 +349,31 @@ async function seedQuotes(opportunityIds: { open: string; quoted: string; won: s
 async function main() {
   log.info("Starting demo seed...");
 
+  const { alice, bob } = await seedOrganizationAndDemoUsers();
   const { a400 } = await seedSuppliers();
   await seedCatalog(a400.id);
-  const opps = await seedOpportunities();
-  await seedQuotes({ open: opps.open.id, quoted: opps.quoted.id, won: opps.won.id });
+  const opps = await seedOpportunities(alice.id, bob.id);
+  await seedQuotes(
+    { open: opps.open.id, quoted: opps.quoted.id, won: opps.won.id },
+    alice.id,
+    bob.id,
+  );
 
-  const [suppliers, products, variants, quotes, opportunities, outcomes] = await Promise.all([
-    prisma.supplier.count(),
-    prisma.product.count(),
-    prisma.productVariant.count(),
-    prisma.quote.count(),
-    prisma.opportunity.count(),
-    prisma.quoteOutcome.count(),
-  ]);
+  const [organizations, memberships, suppliers, products, variants, quotes, opportunities, outcomes] =
+    await Promise.all([
+      prisma.organization.count(),
+      prisma.organizationMembership.count(),
+      prisma.supplier.count(),
+      prisma.product.count(),
+      prisma.productVariant.count(),
+      prisma.quote.count(),
+      prisma.opportunity.count(),
+      prisma.quoteOutcome.count(),
+    ]);
 
   console.log("\n✓ Demo seed complete");
+  console.log(`  Organizations: ${organizations}`);
+  console.log(`  Memberships:   ${memberships}`);
   console.log(`  Suppliers:     ${suppliers}`);
   console.log(`  Products:      ${products}`);
   console.log(`  Variants:      ${variants}`);

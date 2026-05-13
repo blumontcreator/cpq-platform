@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { addVariantToGraph, runQuoteEvaluation } from "../../actions/quote.actions";
 import { QuoteTabs } from "@/components/console/quote-tabs";
 import { AddVariantForm } from "@/components/console/add-variant-form";
@@ -13,12 +13,14 @@ import type { QuoteEvaluation } from "@/modules/quoting/types/evaluation.types";
 
 export async function generateMetadata({ params }: { params: Promise<{ quoteId: string }> }) {
   const { quoteId } = await params;
-  const q = await prisma.quote.findUnique({ where: { id: quoteId }, select: { reference: true } });
+  const scoped = await requireScopedPrisma();
+  const q = await scoped.quotes.findUnique({ where: { id: quoteId }, select: { reference: true } });
   return { title: `${q?.reference ?? quoteId} — Quote Builder — CPQ Console` };
 }
 
 async function getQuoteDetail(quoteId: string) {
-  return prisma.quote.findUnique({
+  const scoped = await requireScopedPrisma();
+  return scoped.quotes.findUnique({
     where: { id: quoteId },
     include: {
       evaluations: { orderBy: { createdAt: "desc" }, take: 1 },

@@ -2,24 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
+import type { Prisma } from "@prisma/client";
 import type { QuoteGraph, QuoteNode } from "@/modules/quoting/types/graph.types";
 
 export async function createQuote(formData: FormData): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const reference = (formData.get("reference") as string)?.trim();
   const currency = (formData.get("currency") as string) || "USD";
   if (!reference) return;
 
-  await prisma.quote.create({ data: { reference, currency } });
+  await scoped.quotes.create({ data: { reference, currency } });
   revalidatePath("/quotes");
 }
 
 export async function addVariantToGraph(quoteId: string, formData: FormData): Promise<void> {
+  const scoped = await requireScopedPrisma();
   const sku = (formData.get("sku") as string)?.trim();
   const qty = parseFloat(formData.get("quantity") as string) || 1;
   if (!sku) return;
 
-  const variant = await prisma.productVariant.findUnique({
+  const variant = await scoped.productVariants.findUnique({
     where: { sku },
     include: {
       prices: { where: { priceType: "LIST" }, orderBy: { createdAt: "desc" }, take: 1 },
@@ -39,7 +42,7 @@ export async function addVariantToGraph(quoteId: string, formData: FormData): Pr
     ? (latestCalc.result as Record<string, unknown>)["finalUnitPrice"] as number || 0
     : Number(listPrice?.amount ?? 0);
 
-  const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
+  const quote = await scoped.quotes.findUnique({ where: { id: quoteId } });
   if (!quote) return;
 
   const existingGraph = (quote.graph as unknown as QuoteGraph) ?? null;
@@ -67,23 +70,24 @@ export async function addVariantToGraph(quoteId: string, formData: FormData): Pr
         context: { currency: quote.currency, channel: "DIRECT" as const, pricingDate: new Date() },
       };
 
-  await prisma.quote.update({
+  await scoped.quotes.update({
     where: { id: quoteId },
-    data: { graph: newGraph as unknown as Parameters<typeof prisma.quote.update>[0]["data"]["graph"] },
+    data: { graph: newGraph as unknown as Prisma.InputJsonValue },
   });
 
   revalidatePath(`/quotes/${quoteId}`);
 }
 
 export async function runQuoteEvaluation(quoteId: string): Promise<void> {
-  const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
+  const scoped = await requireScopedPrisma();
+  const quote = await scoped.quotes.findUnique({ where: { id: quoteId } });
   if (!quote?.graph) return;
 
   const { runQuoteEngine } = await import("@/modules/quoting");
   await runQuoteEngine({
     graph: quote.graph as unknown as QuoteGraph,
     persist: true,
-    prisma,
+    prisma: scoped.prisma,
   });
 
   revalidatePath(`/quotes/${quoteId}`);

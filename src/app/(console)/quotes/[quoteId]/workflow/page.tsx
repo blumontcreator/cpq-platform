@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { submitApproval, advanceWorkflow } from "../../../actions/workflow.actions";
 import { QuoteTabs } from "@/components/console/quote-tabs";
 import { ApprovalForm } from "@/components/console/approval-form";
@@ -13,13 +13,15 @@ import type { WorkflowTransitionRecord } from "@/modules/workflow/types/workflow
 
 export async function generateMetadata({ params }: { params: Promise<{ quoteId: string }> }) {
   const { quoteId } = await params;
-  const q = await prisma.quote.findUnique({ where: { id: quoteId }, select: { reference: true } });
+  const scoped = await requireScopedPrisma();
+  const q = await scoped.quotes.findUnique({ where: { id: quoteId }, select: { reference: true } });
   return { title: `${q?.reference ?? quoteId} — Workflow — CPQ Console` };
 }
 
 export default async function WorkflowTimelinePage({ params }: { params: Promise<{ quoteId: string }> }) {
   const { quoteId } = await params;
-  const quote = await prisma.quote.findUnique({
+  const scoped = await requireScopedPrisma();
+  const quote = await scoped.quotes.findUnique({
     where: { id: quoteId },
     select: { id: true, reference: true, currency: true },
   });
@@ -28,7 +30,7 @@ export default async function WorkflowTimelinePage({ params }: { params: Promise
   let workflowStatus = null;
   let noWorkflow = false;
   try {
-    workflowStatus = await getWorkflowStatus(prisma, quoteId);
+    workflowStatus = await getWorkflowStatus(scoped.prisma, quoteId);
   } catch {
     noWorkflow = true;
   }

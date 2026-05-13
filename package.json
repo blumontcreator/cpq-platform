@@ -17,7 +17,8 @@
     "quote:demo": "tsx scripts/quote-demo.ts",
     "simulate:demo": "tsx scripts/simulation-demo.ts",
     "intelligence:demo": "tsx scripts/intelligence-demo.ts",
-    "workflow:demo": "tsx scripts/workflow-demo.ts"
+    "workflow:demo": "tsx scripts/workflow-demo.ts",
+    "auth:verify": "tsx scripts/verify-supabase-auth.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

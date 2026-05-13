@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import {
   getNegotiationTimeline,
   buildConcessionSummary,
@@ -29,15 +29,16 @@ const KIND_COLORS: Record<string, "green" | "red" | "yellow" | "blue" | "zinc"> 
 
 export default async function NegotiatePage({ params }: Props) {
   const { quoteId } = await params;
-  const quote = await prisma.quote.findUnique({
+  const scoped = await requireScopedPrisma();
+  const quote = await scoped.quotes.findUnique({
     where:   { id: quoteId },
     include: { evaluations: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
   if (!quote) notFound();
 
   const [concessions, timeline] = await Promise.all([
-    buildConcessionSummary(prisma, quoteId),
-    getNegotiationTimeline(prisma, quoteId),
+    buildConcessionSummary(scoped.prisma, quoteId),
+    getNegotiationTimeline(scoped.prisma, quoteId),
   ]);
 
   const latestEval = quote.evaluations[0]?.evaluation as unknown as QuoteEvaluation | undefined;
@@ -46,7 +47,7 @@ export default async function NegotiatePage({ params }: Props) {
 
   // Get opportunity for target margin
   const opportunity = quote.opportunityId
-    ? await prisma.opportunity.findUnique({ where: { id: quote.opportunityId } })
+    ? await scoped.opportunities.findUnique({ where: { id: quote.opportunityId } })
     : null;
 
   const guidance = totalRevenue > 0

@@ -18,6 +18,12 @@ enum CpqRole {
   ADMIN
 }
 
+/// Role of a user within a single organization (tenant-scoped).
+enum OrganizationMemberRole {
+  ADMIN
+  MEMBER
+}
+
 /// Internal CPQ platform user. Supabase Auth is the identity provider; this
 /// record carries role assignment (CpqRole) and audit attribution.
 model User {
@@ -34,8 +40,35 @@ model User {
   /// Arbitrary profile metadata (department, region, etc.)
   metadata  Json?
 
+  memberships OrganizationMembership[]
+
   @@index([email])
   @@index([role])
+}
+
+/// Top-level tenant boundary (Phase 2A — business entities are not yet scoped).
+model Organization {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships OrganizationMembership[]
+}
+
+model OrganizationMembership {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationMemberRole @default(MEMBER)
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
 }
 
 model Supplier {
