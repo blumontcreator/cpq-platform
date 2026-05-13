@@ -18,6 +18,7 @@ async function getCatalogData() {
       _count: { select: { variants: true } },
     },
     orderBy: { canonicalName: "asc" },
+    take: 200,
   });
   return products;
 }

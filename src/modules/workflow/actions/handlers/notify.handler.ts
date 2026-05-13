@@ -1,5 +1,6 @@
 import type { WorkflowInstance } from "../../types/workflow.types";
 import type { NotifyStakeholderParams, ActionResult } from "../../types/action.types";
+import { workflowLogger } from "@/lib/observability/logger";
 
 /**
  * Notification handler.
@@ -24,11 +25,12 @@ export async function handleNotifyStakeholder(
     timestamp: new Date().toISOString(),
   };
 
-  // Structured log for observability / future webhook dispatch
-  if (process.env.NODE_ENV !== "test") {
-    const prefix = params.urgency === "CRITICAL" ? "🔴" : params.urgency === "WARNING" ? "🟡" : "🔵";
-    console.log(`${prefix} [NOTIFY:${params.role}] ${params.message} (quote ${instance.quoteId})`);
-  }
+  workflowLogger.info("Stakeholder notification dispatched", {
+    quoteId:  instance.quoteId,
+    role:     params.role,
+    urgency:  params.urgency,
+    message:  params.message,
+  });
 
   return {
     actionId,

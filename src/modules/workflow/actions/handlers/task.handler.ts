@@ -4,6 +4,7 @@ import type {
   CreateInstallationTaskParams,
   ActionResult,
 } from "../../types/action.types";
+import { workflowLogger } from "@/lib/observability/logger";
 
 /**
  * Operational task handlers.
@@ -32,9 +33,11 @@ export async function handleCreateProcurementTask(
     aiNote: `Supplier risk factors should be reviewed. For high-risk suppliers, consider pre-negotiating lead-time commitments. AI procurement assistant integration point.`,
   };
 
-  if (process.env.NODE_ENV !== "test") {
-    console.log(`[PROCUREMENT] Quote ${instance.quoteId}: suppliers=${params.supplierIds.join(",")} priority=${params.priority}`);
-  }
+  workflowLogger.info("Procurement task created", {
+    quoteId:     instance.quoteId,
+    supplierIds: params.supplierIds,
+    priority:    params.priority,
+  });
 
   return {
     actionId,
@@ -61,9 +64,11 @@ export async function handleCreateInstallationTask(
     aiNote: `Installation complexity: ${params.complexity}. For HIGH/CRITICAL complexity, consider pre-deployment site assessment. AI field-service integration point.`,
   };
 
-  if (process.env.NODE_ENV !== "test") {
-    console.log(`[INSTALLATION] Quote ${instance.quoteId}: est=${params.estimatedDays}d complexity=${params.complexity}`);
-  }
+  workflowLogger.info("Installation task created", {
+    quoteId:      instance.quoteId,
+    estimatedDays: params.estimatedDays,
+    complexity:   params.complexity,
+  });
 
   return {
     actionId,

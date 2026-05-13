@@ -3,8 +3,12 @@ import path from "node:path";
 import type { PrismaClient } from "@prisma/client";
 import { ImportSourceKind } from "@prisma/client";
 import type { ImportProfile } from "../profiles/profile.types";
+import { UnsupportedFormatError } from "@/lib/errors";
 import { parseCsvText, parseXlsxBuffer } from "../parsers";
 import { persistSupplierImport } from "../persistence/import-persistence";
+import { rootLogger } from "@/lib/observability/logger";
+
+const log = rootLogger.child("imports");
 
 function detectSourceKind(fileName: string): ImportSourceKind {
   const ext = path.extname(fileName).toLowerCase();
@@ -32,13 +36,13 @@ export async function importSupplierFileFromDisk(
     const buf = await fs.readFile(absoluteFilePath);
     parsed = parseXlsxBuffer(buf, fileName);
   } else {
-    throw new Error(`Unsupported file type for import: ${ext}`);
+    throw new UnsupportedFormatError(ext, `Supported: .xlsx, .xls, .csv, .tsv, .json`);
   }
 
   const sourceKind = detectSourceKind(fileName);
 
   if (parsed.globalErrors.length) {
-    console.warn(`[import] ${fileName} parser warnings:`, parsed.globalErrors);
+    log.warn("Parser warnings during import", { fileName, errors: parsed.globalErrors });
   }
 
   return persistSupplierImport(prisma, {

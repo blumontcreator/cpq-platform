@@ -15,6 +15,8 @@
  */
 import type { PrismaClient, Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+import { NotFoundError, TransactionError } from "@/lib/errors";
+import { withTransaction } from "@/lib/db/transaction";
 import type { QuoteGraph, QuoteNode } from "@/modules/quoting/types/graph.types";
 import { runQuoteEngine } from "@/modules/quoting";
 import { runOptimization } from "@/modules/simulation";
@@ -56,21 +58,22 @@ async function buildGraphFromItems(
   items: QuoteItemRequest[],
   context: { currency: string; customerId?: string; channel: string; quoteId: string },
 ): Promise<QuoteGraph> {
+  const skus = items.map((i) => i.sku);
+
+  // Single batched query — eliminates N+1 (one query regardless of item count)
+  const variants = await prisma.productVariant.findMany({
+    where:   { sku: { in: skus } },
+    include: { prices: { orderBy: { createdAt: "desc" }, take: 2 } },
+  });
+
+  const variantBySku = new Map(variants.map((v) => [v.sku, v]));
   const nodes: QuoteNode[] = [];
 
   for (const item of items) {
-    const variant = await prisma.productVariant.findFirst({
-      where: { sku: item.sku },
-      include: {
-        prices: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    });
+    const variant = variantBySku.get(item.sku);
 
     // ProductPrice uses `amount` and `priceType` (LIST = list price, COST = cost price)
-    const costPrice = variant?.prices.find((p) => p.priceType === "COST");
+    const costPrice    = variant?.prices.find((p) => p.priceType === "COST");
     const listPriceRow = variant?.prices.find((p) => p.priceType === "LIST") ?? variant?.prices[0];
 
     const unitCost  = costPrice ? Number(costPrice.amount) : listPriceRow ? Number(listPriceRow.amount) * 0.65 : 50;
@@ -256,7 +259,7 @@ export async function executeCommercialLifecycle(
   const opportunity = await prisma.opportunity.findUnique({
     where: { id: context.opportunityId },
   });
-  if (!opportunity) throw new Error(`Opportunity ${context.opportunityId} not found`);
+  if (!opportunity) throw new NotFoundError("Opportunity", context.opportunityId, "lifecycle");
 
   const targetMarginPct = Number(opportunity.targetMarginPct);
   const strategicPriority = opportunity.strategicPriority;
@@ -472,7 +475,7 @@ export async function closeQuoteOutcome(
     include: { evaluations: { orderBy: { createdAt: "desc" }, take: 1 }, outcome: true },
   });
 
-  if (!quote) throw new Error(`Quote ${input.quoteId} not found`);
+  if (!quote) throw new NotFoundError("Quote", input.quoteId, "lifecycle");
 
   const latestEval = quote.evaluations[0]?.evaluation as unknown as QuoteEvaluation | undefined;
   const quotedRevenue    = latestEval?.metrics.totalRevenue   ?? 0;
@@ -486,41 +489,43 @@ export async function closeQuoteOutcome(
     : input.outcome === "EXPIRED" ? "EXPIRED"
     : "ACCEPTED"; // PARTIALLY_WON
 
-  await prisma.quote.update({
-    where: { id: input.quoteId },
-    data:  { status: newStatus },
-  });
-
-  // Upsert QuoteOutcome
+  // Atomic write: quote status + outcome record must succeed together
   const now = new Date();
-  const outcome = await prisma.quoteOutcome.upsert({
-    where:  { quoteId: input.quoteId },
-    update: {
-      outcome:           input.outcome === "PARTIALLY_WON" ? "WON" : input.outcome,
-      realizedRevenue:   input.realizedRevenue,
-      realizedMarginPct: input.realizedMarginPct,
-      realizedDiscount:  input.realizedDiscount,
-      lossReason:        input.lossReason,
-      competitorPrice:   input.competitorPrice,
-      strategy:          input.strategy,
-      closedAt:          now,
-    },
-    create: {
-      quoteId:           input.quoteId,
-      outcome:           input.outcome === "PARTIALLY_WON" ? "WON" : input.outcome,
-      quotedRevenue,
-      quotedMarginPct,
-      quotedDiscount:    0,
-      realizedRevenue:   input.realizedRevenue,
-      realizedMarginPct: input.realizedMarginPct,
-      realizedDiscount:  input.realizedDiscount,
-      lossReason:        input.lossReason,
-      competitorPrice:   input.competitorPrice,
-      strategy:          input.strategy,
-      customerId:        input.customerId,
-      quotedAt:          quote.createdAt,
-      closedAt:          now,
-    },
+  const outcome = await withTransaction(prisma, "close-quote-outcome", async (tx) => {
+    await tx.quote.update({
+      where: { id: input.quoteId },
+      data:  { status: newStatus },
+    });
+
+    return tx.quoteOutcome.upsert({
+      where:  { quoteId: input.quoteId },
+      update: {
+        outcome:           input.outcome === "PARTIALLY_WON" ? "WON" : input.outcome,
+        realizedRevenue:   input.realizedRevenue,
+        realizedMarginPct: input.realizedMarginPct,
+        realizedDiscount:  input.realizedDiscount,
+        lossReason:        input.lossReason,
+        competitorPrice:   input.competitorPrice,
+        strategy:          input.strategy,
+        closedAt:          now,
+      },
+      create: {
+        quoteId:           input.quoteId,
+        outcome:           input.outcome === "PARTIALLY_WON" ? "WON" : input.outcome,
+        quotedRevenue,
+        quotedMarginPct,
+        quotedDiscount:    0,
+        realizedRevenue:   input.realizedRevenue,
+        realizedMarginPct: input.realizedMarginPct,
+        realizedDiscount:  input.realizedDiscount,
+        lossReason:        input.lossReason,
+        competitorPrice:   input.competitorPrice,
+        strategy:          input.strategy,
+        customerId:        input.customerId,
+        quotedAt:          quote.createdAt,
+        closedAt:          now,
+      },
+    });
   });
 
   // Trigger learning feedback loop

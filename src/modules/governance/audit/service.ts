@@ -21,6 +21,7 @@ import type {
 import { governanceLogger as log } from "@/lib/observability/logger";
 import { metrics } from "@/lib/observability/metrics";
 import { createEvent, emitGovernanceOverride } from "@/lib/events";
+import { GovernanceViolationError } from "@/lib/errors";
 
 // ── Prisma → domain normalisation ─────────────────────────────────────────
 
@@ -82,7 +83,7 @@ export async function recordOverride(
   input: CreateAuditRecordInput,
 ): Promise<GovernanceAuditRecord> {
   if (!input.justification.trim()) {
-    throw new Error("Governance override requires a non-empty justification");
+    throw new GovernanceViolationError("Override requires a non-empty justification");
   }
 
   const riskLevel = input.riskLevel ?? KIND_DEFAULT_RISK[input.kind] ?? "LOW";

@@ -12,6 +12,7 @@
  *   getApprovalAuditTrail   — full immutable approval history for a quote
  */
 import type { PrismaClient } from "@prisma/client";
+import { NotFoundError } from "@/lib/errors";
 import {
   processWorkflowTrigger,
   initWorkflow as _initWorkflow,
@@ -99,7 +100,7 @@ export async function submitApprovalDecision(
 ): Promise<{ decisionResult: DecisionResult; orchestratorResult?: OrchestratorResult }> {
   // Load the workflow to get workflowId
   const instance = await loadWorkflowInstance(prisma, quoteId);
-  if (!instance) throw new Error(`No workflow found for quote ${quoteId}`);
+  if (!instance) throw new NotFoundError("WorkflowInstance", quoteId, "workflow");
 
   const decisionResult = await recordApprovalDecision(prisma, instance.id, decision);
 

@@ -4,6 +4,7 @@
  * Add new processors here. The cost graph runner resolves them by kind.
  */
 import type { LayerProcessor } from "./layer-processor";
+import { ValidationError } from "@/lib/errors";
 import type { CostLayerKind } from "../types/cost-layer.types";
 import { supplierCostProcessor } from "./layers/supplier-cost.layer";
 import { fxConversionProcessor } from "./layers/fx.layer";
@@ -31,6 +32,6 @@ const REGISTRY = new Map<CostLayerKind, LayerProcessor>([
 
 export function getLayerProcessor(kind: CostLayerKind): LayerProcessor {
   const p = REGISTRY.get(kind);
-  if (!p) throw new Error(`No layer processor registered for kind: ${kind}`);
+  if (!p) throw new ValidationError(`No layer processor registered for kind: ${kind}`, { kind }, "pricing");
   return p;
 }

@@ -25,6 +25,7 @@ export default async function ApprovalsPage() {
   const pendingApprovals = await prisma.approvalRequest.findMany({
     where:   { status: "PENDING" },
     orderBy: { createdAt: "asc" },
+    take:    50,
     include: {
       workflow: {
         select: { quoteId: true, currentState: true },

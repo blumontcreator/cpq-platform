@@ -14,6 +14,7 @@
  * Validation failures throw — let callers decide how to handle.
  */
 import { randomUUID } from "node:crypto";
+import { ValidationError } from "@/lib/errors";
 import type { PrismaClient } from "@prisma/client";
 import { validateEventPayload } from "./event-schema";
 import type { EventKind } from "../types/event.types";
@@ -51,7 +52,7 @@ export async function ingestEvent(
 ): Promise<IngestResult> {
   const validation = validateEventPayload(input.kind, input.payload);
   if (!validation.valid) {
-    throw new Error(`Invalid ${input.kind} payload: ${validation.errors?.join("; ")}`);
+    throw new ValidationError(`Invalid ${input.kind} payload: ${validation.errors?.join("; ")}`, { kind: input.kind }, "intelligence");
   }
 
   const payload = validation.parsed!;

@@ -1,5 +1,6 @@
 import type { WorkflowInstance } from "../../types/workflow.types";
 import type { EscalateIssueParams, ActionResult } from "../../types/action.types";
+import { workflowLogger } from "@/lib/observability/logger";
 
 /**
  * Escalation handler.
@@ -30,7 +31,12 @@ export async function handleEscalateIssue(
     aiNote: `Risk score: ${instance.context.operationalRiskScore ?? "unknown"}. Suggest AI triage for automated resolution recommendation.`,
   };
 
-  console.log(`🚨 [ESCALATE:${params.riskLevel}] Quote ${instance.quoteId} → ${params.escalateTo}: ${params.reason}`);
+  workflowLogger.warn("Escalation triggered", {
+    quoteId: instance.quoteId,
+    escalateTo: params.escalateTo,
+    riskLevel: params.riskLevel,
+    reason: params.reason,
+  });
 
   return {
     actionId,

@@ -1,5 +1,6 @@
 import type { WorkflowInstance } from "../../types/workflow.types";
 import type { TriggerRepricingParams, ActionResult } from "../../types/action.types";
+import { workflowLogger } from "@/lib/observability/logger";
 
 /**
  * Repricing handler.
@@ -27,9 +28,11 @@ export async function handleTriggerRepricing(
     integrationNote: "Call simulation/scenario-engine.ts#runOptimization with the graph from this quote.",
   };
 
-  if (process.env.NODE_ENV !== "test") {
-    console.log(`[REPRICE] Quote ${instance.quoteId}: ${params.reason} (strategy: ${params.strategyKind ?? "auto"})`);
-  }
+  workflowLogger.info("Repricing requested", {
+    quoteId:  instance.quoteId,
+    strategy: params.strategyKind ?? "auto",
+    reason:   params.reason,
+  });
 
   return {
     actionId,
