@@ -223,6 +223,49 @@ model PricingCalculation {
   @@index([policyId])
 }
 
+// ── Opportunity models ────────────────────────────────────────────────────
+
+enum OpportunityStatus {
+  OPEN
+  QUOTED
+  WON
+  LOST
+  ABANDONED
+}
+
+enum StrategicPriority {
+  STANDARD
+  IMPORTANT
+  STRATEGIC
+  MUST_WIN
+}
+
+/// Sales opportunity — the commercial context that initiates a quote.
+model Opportunity {
+  id                String            @id @default(cuid())
+  reference         String            @unique
+  customerName      String
+  customerId        String
+  salesOwnerId      String
+  channel           String            @default("DIRECT")
+  expectedCloseDate DateTime?
+  targetMarginPct   Decimal           @db.Decimal(6, 3)
+  strategicPriority StrategicPriority @default(STANDARD)
+  estimatedRevenue  Decimal?          @db.Decimal(14, 2)
+  status            OpportunityStatus @default(OPEN)
+  notes             String?
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  quotes Quote[]
+
+  @@index([customerId])
+  @@index([salesOwnerId])
+  @@index([status])
+  @@index([expectedCloseDate])
+}
+
 // ── Quoting models ────────────────────────────────────────────────────────────
 
 enum QuoteStatus {
@@ -251,15 +294,79 @@ model Quote {
   ownerId    String?
   /// Channel: DIRECT | PARTNER | ONLINE | DISTRIBUTOR
   channel    String?
+  /// Link back to the originating opportunity.
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
 
-  lines        QuoteLine[]
-  evaluations  QuoteEvaluationRecord[]
-  scenarioRuns ScenarioRun[]
-  outcome      QuoteOutcome?
-  workflow     WorkflowInstance?
+  lines          QuoteLine[]
+  evaluations    QuoteEvaluationRecord[]
+  scenarioRuns   ScenarioRun[]
+  outcome        QuoteOutcome?
+  workflow       WorkflowInstance?
+  revisions      QuoteRevision[]
+  negotiations   NegotiationEvent[]
 
   @@index([ownerId])
   @@index([status])
+  @@index([opportunityId])
+}
+
+/// Immutable snapshot of the full quote state at a specific revision.
+/// Created when the quote is modified (customer request, approval, negotiation).
+model QuoteRevision {
+  id         String   @id @default(cuid())
+  quoteId    String
+  quote      Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  revisionNo Int
+  /// INITIAL | CUSTOMER_REQUEST | INTERNAL_REVISION | POST_APPROVAL | NEGOTIATION | SCOPE_CHANGE
+  reason     String
+  /// Full serialised quote state (graph + metadata) at this revision.
+  snapshot   Json
+  changedBy  String?
+  changeNote String?
+  createdAt  DateTime @default(now())
+
+  @@unique([quoteId, revisionNo])
+  @@index([quoteId])
+}
+
+/// Negotiation event — every customer interaction during the quoting cycle.
+/// Builds the immutable negotiation timeline for learning and audit.
+model NegotiationEvent {
+  id                String   @id @default(cuid())
+  quoteId           String
+  quote             Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  revisionNo        Int?
+  /// CUSTOMER_PRICE_REQUEST | DISCOUNT_REQUEST | SCOPE_CHANGE | COUNTER_OFFER | ACCEPTANCE | REJECTION | EXPIRY_EXTENSION
+  kind              String
+  requestedValue    Decimal? @db.Decimal(14, 2)
+  requestedDiscount Decimal? @db.Decimal(6, 3)
+  grantedValue      Decimal? @db.Decimal(14, 2)
+  grantedDiscount   Decimal? @db.Decimal(6, 3)
+  concessionNote    String?
+  performedBy       String?
+  occurredAt        DateTime @default(now())
+  metadata          Json?
+
+  @@index([quoteId])
+  @@index([occurredAt])
+}
+
+/// Diff between two supplier imports — source of anomaly detection.
+model ImportDiff {
+  id           String   @id @default(cuid())
+  supplierId   String
+  baseImportId String
+  newImportId  String
+  /// Summary: { newSkuCount, removedSkuCount, priceChangeCount, leadTimeChangeCount, confidenceDropCount }
+  summary      Json
+  /// Array of ImportAnomaly objects flagged during comparison.
+  anomalies    Json
+  createdAt    DateTime @default(now())
+
+  @@index([supplierId])
+  @@index([newImportId])
+  @@index([baseImportId])
 }
 
 /// Immutable audit log of a full graph evaluation run.

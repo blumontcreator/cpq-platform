@@ -11,6 +11,9 @@ export function QuoteTabs({ quoteId }: { quoteId: string }) {
     { href: base,                  label: "Builder"    },
     { href: `${base}/simulation`,  label: "Simulation" },
     { href: `${base}/workflow`,    label: "Workflow"   },
+    { href: `${base}/revisions`,   label: "Revisions"  },
+    { href: `${base}/negotiate`,   label: "Negotiate"  },
+    { href: `${base}/outcome`,     label: "Outcome"    },
   ];
 
   return (
