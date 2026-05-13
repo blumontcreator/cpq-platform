@@ -1,7 +1,8 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { listOpportunities } from "@/modules/opportunity";
 import { createOpportunityAction } from "../actions/opportunity.actions";
-import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
 import Link from "next/link";
 

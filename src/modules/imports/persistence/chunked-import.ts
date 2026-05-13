@@ -25,7 +25,7 @@ import type { ImportProfile } from "../profiles/profile.types";
 import type { ParsedFileResult } from "../types";
 import type { ExtractionProvider } from "../../catalog/extraction/types";
 import { mapRawToFields, normalizeMappedRow } from "../../catalog/normalization/normalization.service";
-import { upsertCatalogFromMappedRow, buildInternalSku } from "./import-persistence";
+import { upsertCatalogFromMappedRow } from "./import-persistence";
 import { ImportChunkError } from "@/lib/errors";
 import { rootLogger } from "@/lib/observability/logger";
 

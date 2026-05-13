@@ -14,8 +14,28 @@ import { metrics } from "@/lib/observability/metrics";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const start = Date.now();
+
+  // Protect with DIAGNOSTICS_SECRET env var (set in production deployment).
+  // If not configured, falls back to "open" in development only.
+  const secret = process.env.DIAGNOSTICS_SECRET;
+  if (secret) {
+    const authHeader = req.headers.get("authorization") ?? "";
+    const provided = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (provided !== secret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    // In production without a secret configured, block entirely
+    return new Response(JSON.stringify({ error: "DIAGNOSTICS_SECRET not configured" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   const [
     env,

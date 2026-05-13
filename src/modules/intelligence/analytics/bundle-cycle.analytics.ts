@@ -10,24 +10,24 @@ export async function computeBundleCycleReport(
     ...(periodDays ? { quotedAt: { gte: new Date(Date.now() - periodDays * 86400000) } } : {}),
   };
 
+  // Single query with relation include — eliminates N+1 (one query regardless of outcome count)
   const won = await prisma.quoteOutcome.findMany({
     where,
-    select: { cycleDays: true, quoteId: true },
+    select: {
+      cycleDays: true,
+      quoteId:   true,
+      quote:     { select: { graph: true } },
+    },
+    take: 2000,
   });
 
   const cycles = won.map((o) => o.cycleDays ?? 0).filter((d) => d > 0).sort((a, b) => a - b);
 
-  // Bundle inclusion: count won quotes where the graph contains a BUNDLE node
+  // Bundle inclusion: check graph in-memory after single join query
   let bundleCount = 0;
   for (const outcome of won) {
-    const quote = await prisma.quote.findUnique({
-      where: { id: outcome.quoteId },
-      select: { graph: true },
-    });
-    if (quote?.graph) {
-      const g = quote.graph as { nodes?: { kind: string }[] };
-      if (g.nodes?.some((n) => n.kind === "BUNDLE")) bundleCount++;
-    }
+    const graph = outcome.quote?.graph as { nodes?: { kind: string }[] } | null;
+    if (graph?.nodes?.some((n) => n.kind === "BUNDLE")) bundleCount++;
   }
 
   const avg = (arr: number[]) => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;

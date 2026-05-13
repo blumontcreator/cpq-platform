@@ -70,7 +70,7 @@ export interface SupplierPerformance {
   issueRate: number;
   /** 0–100 composite reliability score. */
   reliabilityScore: number;
-  reliabilityTrend: "IMPROVING" | "STABLE" | "DECLINING";
+  reliabilityTrend: "IMPROVING" | "STABLE" | "DECLINING" | "INSUFFICIENT_DATA";
   sampleSize: number;
   confidence: number;
   lastUpdated: string;

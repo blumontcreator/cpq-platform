@@ -1,9 +1,9 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { computeImportDiff, getImportDiffForImport } from "@/modules/lifecycle";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TracePanel, TraceRow, WarningList } from "@/components/ui/trace-panel";
 import type { ImportAnomaly } from "@/modules/lifecycle/import-diff";
 import Link from "next/link";
 

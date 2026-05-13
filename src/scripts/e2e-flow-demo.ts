@@ -21,7 +21,6 @@ import {
   recordNegotiationEvent,
   createRevision,
   buildConcessionSummary,
-  buildNegotiationGuidance,
 } from "@/modules/negotiation";
 import { eventBus } from "@/lib/events";
 import { rootLogger } from "@/lib/observability/logger";

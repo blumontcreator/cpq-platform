@@ -36,7 +36,7 @@ export async function computeSupplierPerformance(
       maxDelayDays: 0,
       issueRate: 0,
       reliabilityScore: 100,
-      reliabilityTrend: "INSUFFICIENT_DATA" as unknown as "STABLE",
+      reliabilityTrend: "INSUFFICIENT_DATA" as const,
       sampleSize: 0,
       confidence: 0,
       lastUpdated: new Date().toISOString(),

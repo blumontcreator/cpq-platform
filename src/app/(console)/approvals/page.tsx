@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { submitApproval } from "../actions/workflow.actions";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";

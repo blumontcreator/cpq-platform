@@ -40,6 +40,12 @@ const ENV_SPEC: EnvVar[] = [
     required:    false,
     description: "Public base URL for absolute link generation",
   },
+  {
+    name:        "DIAGNOSTICS_SECRET",
+    required:    false,
+    description: "Bearer token protecting GET /api/diagnostics (required in production)",
+    redact:      true,
+  },
 ];
 
 export interface EnvValidationResult {

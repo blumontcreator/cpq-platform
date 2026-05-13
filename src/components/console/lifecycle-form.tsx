@@ -37,10 +37,8 @@ export function LifecycleForm({
 }
 
 export function NegotiationEventForm({
-  quoteId,
   addEventAction,
 }: {
-  quoteId: string;
   addEventAction: (formData: FormData) => Promise<void>;
 }) {
   const [pending, startTransition] = useTransition();
@@ -95,10 +93,8 @@ export function NegotiationEventForm({
 }
 
 export function CloseOutcomeForm({
-  quoteId,
   closeAction,
 }: {
-  quoteId: string;
   closeAction: (formData: FormData) => Promise<void>;
 }) {
   const [pending, startTransition] = useTransition();

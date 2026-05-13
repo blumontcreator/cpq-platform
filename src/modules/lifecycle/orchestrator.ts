@@ -15,12 +15,12 @@
  */
 import type { PrismaClient, Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
-import { NotFoundError, TransactionError } from "@/lib/errors";
+import { NotFoundError } from "@/lib/errors";
 import { withTransaction } from "@/lib/db/transaction";
 import type { QuoteGraph, QuoteNode } from "@/modules/quoting/types/graph.types";
 import { runQuoteEngine } from "@/modules/quoting";
 import { runOptimization } from "@/modules/simulation";
-import { initWorkflow, processEvaluationResult, getWorkflowStatus } from "@/modules/workflow";
+import { initWorkflow, processEvaluationResult } from "@/modules/workflow";
 import type { EvaluationTriggerInput } from "@/modules/workflow/engine/trigger-evaluator";
 import { snapshotQuoteGraph } from "@/modules/governance/snapshot/service";
 import { createEvent, eventBus } from "@/lib/events";

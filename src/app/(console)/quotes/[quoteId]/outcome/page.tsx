@@ -1,9 +1,8 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { closeOutcomeAction } from "@/app/(console)/actions/negotiation.actions";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
-import { TracePanel, TraceRow } from "@/components/ui/trace-panel";
 import { CloseOutcomeForm } from "@/components/console/lifecycle-form";
 import { QuoteTabs } from "@/components/console/quote-tabs";
 import Link from "next/link";
@@ -28,9 +27,6 @@ export default async function OutcomePage({ params }: Props) {
   const quotedMarginPct = metrics
     ? (metrics.totalMargin / Math.max(metrics.totalRevenue, 1))
     : null;
-
-  const isClosed = quote.outcome &&
-    ["WON","LOST","EXPIRED"].includes(quote.outcome.outcome);
 
   async function closeBound(fd: FormData) {
     "use server";
@@ -133,7 +129,7 @@ export default async function OutcomePage({ params }: Props) {
                 Closing the outcome triggers the learning feedback loop: win probability,
                 strategy ranking, supplier reliability, and pricing confidence are updated.
               </p>
-              <CloseOutcomeForm quoteId={quoteId} closeAction={closeBound} />
+              <CloseOutcomeForm closeAction={closeBound} />
             </CardBody>
           </Card>
         )}

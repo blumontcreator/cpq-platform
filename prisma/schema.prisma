@@ -82,6 +82,8 @@ model SupplierImport {
 
   @@unique([supplierId, version])
   @@index([supplierId, sourceKey])
+  @@index([startedAt])
+  @@index([status])
 }
 
 /// Immutable raw + derived pointers per spreadsheet/CSV row.
@@ -550,6 +552,7 @@ model ApprovalRequest {
   @@index([workflowId])
   @@index([quoteId])
   @@index([status])
+  @@index([createdAt])
 }
 
 // ── Platform Reliability & Governance models ──────────────────────────────

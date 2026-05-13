@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getOpportunity } from "@/modules/opportunity";
@@ -5,7 +6,6 @@ import { executeLifecycleAction, closeOpportunityAction } from "../../actions/op
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
-import { TracePanel, TraceRow } from "@/components/ui/trace-panel";
 import { LifecycleForm } from "@/components/console/lifecycle-form";
 import Link from "next/link";
 

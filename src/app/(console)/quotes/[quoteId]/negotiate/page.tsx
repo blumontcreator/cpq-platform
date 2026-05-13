@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
@@ -5,7 +6,6 @@ import {
   buildConcessionSummary,
   buildNegotiationGuidance,
 } from "@/modules/negotiation";
-import { recordNegotiationEventAction } from "@/app/(console)/actions/negotiation.actions";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
@@ -140,7 +140,7 @@ export default async function NegotiatePage({ params }: Props) {
         <Card>
           <CardHeader label="Record Negotiation Event" />
           <CardBody>
-            <NegotiationEventForm quoteId={quoteId} addEventAction={addEventBound} />
+            <NegotiationEventForm addEventAction={addEventBound} />
           </CardBody>
         </Card>
       )}

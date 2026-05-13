@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { createOpportunity, updateOpportunity, closeOpportunity } from "@/modules/opportunity";
+import { createOpportunity, closeOpportunity } from "@/modules/opportunity";
 import { executeCommercialLifecycle } from "@/modules/lifecycle";
 import { eventBus } from "@/lib/events";
 
