@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireConsoleAuth } from "@/lib/auth/guards";
 import { createOpportunity, closeOpportunity } from "@/modules/opportunity";
 import { executeCommercialLifecycle } from "@/modules/lifecycle";
 import { eventBus } from "@/lib/events";
@@ -9,9 +10,11 @@ import { eventBus } from "@/lib/events";
 eventBus.attachPersistence(prisma);
 
 export async function createOpportunityAction(formData: FormData): Promise<void> {
+  const operator = await requireConsoleAuth();
   const customerName    = (formData.get("customerName") as string)?.trim();
   const customerId      = (formData.get("customerId")   as string)?.trim() || `CUS-${Date.now()}`;
-  const salesOwnerId    = (formData.get("salesOwnerId") as string)?.trim() || "system";
+  const salesOwnerIdRaw = (formData.get("salesOwnerId") as string)?.trim();
+  const salesOwnerId    = salesOwnerIdRaw || operator.userId;
   const channel         = (formData.get("channel")      as string) || "DIRECT";
   const targetMarginPct = parseFloat(formData.get("targetMarginPct") as string) / 100;
   const estimatedRevenue = formData.get("estimatedRevenue")
@@ -37,16 +40,16 @@ export async function createOpportunityAction(formData: FormData): Promise<void>
 }
 
 export async function executeLifecycleAction(formData: FormData): Promise<void> {
+  const operator = await requireConsoleAuth();
   const opportunityId = formData.get("opportunityId") as string;
   const skusRaw       = (formData.get("skus") as string)?.split(",").map((s) => s.trim()).filter(Boolean);
-  const operatorId    = (formData.get("operatorUserId") as string) || "system";
 
   if (!opportunityId || !skusRaw?.length) return;
 
   await executeCommercialLifecycle({
     opportunityId,
     items: skusRaw.map((sku) => ({ sku, quantity: 1 })),
-    operatorUserId: operatorId,
+    operatorUserId: operator.userId,
   });
 
   revalidatePath(`/opportunities/${opportunityId}`);

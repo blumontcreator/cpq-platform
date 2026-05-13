@@ -15,7 +15,6 @@ export function LifecycleForm({
       className="flex flex-col gap-3"
     >
       <input type="hidden" name="opportunityId" value={opportunityId} />
-      <input type="hidden" name="operatorUserId" value="system" />
       <div>
         <label className="block text-xs text-zinc-400 mb-1">SKUs (comma-separated)</label>
         <input
@@ -103,7 +102,6 @@ export function CloseOutcomeForm({
       action={(fd) => { startTransition(() => closeAction(fd)); }}
       className="flex flex-col gap-3"
     >
-      <input type="hidden" name="operatorUserId" value="system" />
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs text-zinc-400 mb-1">Outcome</label>

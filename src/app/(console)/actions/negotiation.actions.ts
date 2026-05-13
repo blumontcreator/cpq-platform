@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireConsoleAuth } from "@/lib/auth/guards";
 import {
   recordNegotiationEvent,
   createRevision,
@@ -61,12 +62,12 @@ export async function closeOutcomeAction(
   quoteId: string,
   formData: FormData,
 ): Promise<void> {
+  const operator = await requireConsoleAuth();
   const outcome         = formData.get("outcome") as "WON" | "LOST" | "EXPIRED" | "PARTIALLY_WON";
   const realizedRevenue = formData.get("realizedRevenue")   ? parseFloat(formData.get("realizedRevenue") as string) : undefined;
   const realizedMarginPct = formData.get("realizedMarginPct") ? parseFloat(formData.get("realizedMarginPct") as string) / 100 : undefined;
   const lossReason      = formData.get("lossReason") as string | undefined;
   const competitorPrice = formData.get("competitorPrice")   ? parseFloat(formData.get("competitorPrice") as string) : undefined;
-  const operatorUserId  = (formData.get("operatorUserId") as string) || "system";
 
   if (!quoteId || !outcome) return;
 
@@ -74,7 +75,7 @@ export async function closeOutcomeAction(
     quoteId, outcome, realizedRevenue, realizedMarginPct,
     lossReason: lossReason || undefined,
     competitorPrice,
-    operatorUserId,
+    operatorUserId: operator.userId,
   });
 
   revalidatePath(`/quotes/${quoteId}/outcome`);
