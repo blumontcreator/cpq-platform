@@ -25,6 +25,17 @@ const ENV_SPEC: EnvVar[] = [
     redact:      true,
   },
   {
+    name:        "NEXT_PUBLIC_SUPABASE_URL",
+    required:    false,
+    description: "Supabase project URL (required for console auth)",
+  },
+  {
+    name:        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    required:    false,
+    description: "Supabase anon / publishable key (server + browser; never use service_role here)",
+    redact:      true,
+  },
+  {
     name:        "DIRECT_URL",
     required:    false,
     description: "Direct connection URL for Prisma migrations (bypasses pooler)",

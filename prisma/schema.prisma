@@ -18,17 +18,20 @@ enum CpqRole {
   ADMIN
 }
 
-/// Internal CPQ platform user. Authentication is handled externally; this
-/// record carries role assignment and audit attribution.
+/// Internal CPQ platform user. Supabase Auth is the identity provider; this
+/// record carries role assignment (CpqRole) and audit attribution.
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  /// Supabase Auth user id (`auth.users.id`). Stable link — do not use for
+  /// authorization claims in JWT user_metadata; RBAC always reads `role` here.
+  authSubject String? @unique
   name      String?
   role      CpqRole  @default(OPERATOR)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  /// Arbitrary profile metadata (department, region, auth provider sub, etc.)
+  /// Arbitrary profile metadata (department, region, etc.)
   metadata  Json?
 
   @@index([email])

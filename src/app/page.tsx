@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 px-6 py-24 dark:bg-zinc-950">
@@ -19,6 +21,14 @@ export default function Home() {
             npm run db:push
           </code>
           , then start modeling products and quotes.
+        </p>
+        <p className="mt-6 text-center text-sm">
+          <Link
+            href="/login"
+            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+          >
+            Operator sign in
+          </Link>
         </p>
       </main>
     </div>

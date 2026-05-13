@@ -6,6 +6,7 @@ import { ConfidenceBar } from "@/components/ui/confidence-bar";
 import { TracePanel, TraceRow, WarningList } from "@/components/ui/trace-panel";
 
 export const metadata = { title: "Intelligence Panel — CPQ Console" };
+export const dynamic = "force-dynamic";
 
 async function getIntelligenceData() {
   try {

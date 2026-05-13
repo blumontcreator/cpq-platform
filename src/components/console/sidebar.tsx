@@ -1,5 +1,6 @@
 "use client";
 
+import type { CpqRole } from "@prisma/client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,7 +13,12 @@ const NAV = [
   { href: "/intelligence",  label: "Intelligence",  icon: "◈" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  operatorEmail: string;
+  operatorRole: CpqRole;
+}
+
+export function Sidebar({ operatorEmail, operatorRole }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -49,9 +55,18 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-zinc-800 px-4 py-3">
-        <p className="text-[10px] font-mono text-zinc-600">operator console</p>
+      {/* Session (identity from server layout — no auth logic here) */}
+      <div className="border-t border-zinc-800 px-4 py-3 space-y-2">
+        <p className="truncate text-[10px] font-mono text-zinc-400" title={operatorEmail}>
+          {operatorEmail}
+        </p>
+        <p className="text-[10px] font-mono text-zinc-600">{operatorRole}</p>
+        <Link
+          href="/logout"
+          className="block rounded border border-zinc-700 bg-zinc-800/50 px-2 py-1.5 text-center text-[11px] text-zinc-300 hover:bg-zinc-800"
+        >
+          Sign out
+        </Link>
         <p className="text-[10px] font-mono text-zinc-700">v0.1.0</p>
       </div>
     </aside>
