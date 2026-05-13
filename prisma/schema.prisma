@@ -7,6 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── Platform Governance: User & RBAC ────────────────────────────────────────
+
+enum CpqRole {
+  OPERATOR
+  SALES
+  MANAGER
+  FINANCE
+  PROCUREMENT
+  ADMIN
+}
+
+/// Internal CPQ platform user. Authentication is handled externally; this
+/// record carries role assignment and audit attribution.
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      CpqRole  @default(OPERATOR)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  /// Arbitrary profile metadata (department, region, auth provider sub, etc.)
+  metadata  Json?
+
+  @@index([email])
+  @@index([role])
+}
+
 model Supplier {
   id        String   @id @default(cuid())
   code      String   @unique
@@ -217,12 +245,21 @@ model Quote {
 
   /// Serialised QuoteGraph — the full node/edge graph for this quote.
   graph      Json?
+  /// Optimistic-lock version counter — incremented on every write.
+  version    Int         @default(1)
+  /// User who owns / created this quote (references User.id, soft FK).
+  ownerId    String?
+  /// Channel: DIRECT | PARTNER | ONLINE | DISTRIBUTOR
+  channel    String?
 
   lines        QuoteLine[]
   evaluations  QuoteEvaluationRecord[]
   scenarioRuns ScenarioRun[]
   outcome      QuoteOutcome?
   workflow     WorkflowInstance?
+
+  @@index([ownerId])
+  @@index([status])
 }
 
 /// Immutable audit log of a full graph evaluation run.
@@ -369,6 +406,8 @@ model WorkflowInstance {
   context       Json
   /// Immutable ordered log of WorkflowTransitionRecord objects.
   history       Json     @default("[]")
+  /// Optimistic-lock version counter for concurrent update safety.
+  version       Int      @default(1)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -404,4 +443,86 @@ model ApprovalRequest {
   @@index([workflowId])
   @@index([quoteId])
   @@index([status])
+}
+
+// ── Platform Reliability & Governance models ──────────────────────────────
+
+/// Immutable point-in-time snapshot of any domain entity.
+/// Enables exact historical replay, rule-version tracking, and audit restoration.
+model Snapshot {
+  id            String   @id @default(cuid())
+  /// PRICING_CALCULATION | QUOTE_EVALUATION | WORKFLOW_STATE | SIMULATION_RUN | SUPPLIER_IMPORT | QUOTE_GRAPH
+  kind          String
+  entityId      String
+  entityType    String
+  /// Full serialised entity at snapshot time.
+  data          Json
+  /// Semver or monotonic counter of the engine that produced this.
+  engineVersion String?
+  /// SHA-256 of the rule/policy set used — for reproducibility verification.
+  rulesetHash   String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  /// Optional tags for querying: { reason, quoteRef, triggeredBy, ... }
+  tags          Json?
+
+  @@index([kind, entityId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+/// Append-only domain event log — the authoritative record for async workers,
+/// distributed orchestration, and deterministic replay.
+model DomainEventRecord {
+  id             String    @id @default(cuid())
+  /// e.g. QuoteCreated, QuotePriced, WorkflowTransitioned, SupplierDelayed, QuoteWon, QuoteLost, SimulationExecuted
+  eventType      String
+  aggregateId    String
+  aggregateType  String
+  /// Event-specific structured payload.
+  payload        Json
+  /// correlationId, causationId, userId, source module, retry count, etc.
+  metadata       Json?
+  occurredAt     DateTime  @default(now())
+  /// Set when a worker or handler has successfully processed this event.
+  processedAt    DateTime?
+  /// Unique key for exactly-once processing; prevents duplicate handling.
+  idempotencyKey String?   @unique
+
+  @@index([eventType])
+  @@index([aggregateId])
+  @@index([aggregateType])
+  @@index([occurredAt])
+  @@index([processedAt])
+}
+
+/// Immutable record of every governance override, exception, or manual intervention.
+/// Accountability-first: every override must have a justification.
+model GovernanceAuditRecord {
+  id             String   @id @default(cuid())
+  /// PRICING_OVERRIDE | MARGIN_EXCEPTION | DISCOUNT_EXCEPTION | WORKFLOW_OVERRIDE | APPROVAL_BYPASS | QUOTE_UNLOCK | STATUS_ROLLBACK
+  kind           String
+  entityId       String
+  entityType     String
+  performedBy    String
+  performedAt    DateTime @default(now())
+  /// Mandatory: human-readable justification for the override.
+  justification  String
+  previousValue  Json?
+  newValue       Json?
+  /// Estimated financial / operational impact of the change.
+  impact         Json?
+  /// Whether this override was itself approved by a higher authority.
+  approved       Boolean  @default(false)
+  approvedBy     String?
+  approvedAt     DateTime?
+  /// Raw risk level of this override: LOW | MEDIUM | HIGH | CRITICAL
+  riskLevel      String   @default("LOW")
+  metadata       Json?
+
+  @@index([kind])
+  @@index([entityId])
+  @@index([performedBy])
+  @@index([performedAt])
+  @@index([riskLevel])
 }
