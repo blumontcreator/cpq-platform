@@ -2,10 +2,9 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { addVariantToGraph, runQuoteEvaluation } from "../../actions/quote.actions";
-import { QuoteTabs } from "@/components/console/quote-tabs";
 import { AddVariantForm } from "@/components/console/add-variant-form";
 import { Card, CardHeader, CardBody, StatRow } from "@/components/ui/card";
-import { Badge, statusBadge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { TracePanel, TraceRow, WarningList } from "@/components/ui/trace-panel";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
 import type { QuoteGraph, QuoteNode } from "@/modules/quoting/types/graph.types";
@@ -43,36 +42,22 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
   const runEvalBound = runQuoteEvaluation.bind(null, quoteId);
 
   return (
-    <div className="flex flex-col">
-      {/* Tab nav */}
-      <div className="border-b border-zinc-800 bg-zinc-900/50 px-6 pt-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="font-mono text-base font-semibold text-zinc-100">{quote.reference}</h1>
-            <p className="text-xs text-zinc-500 mt-0.5">{quote.currency} · {quote.id.slice(0, 8)}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={statusBadge(quote.status)}>{quote.status}</Badge>
-            {quote.outcome && <Badge variant={statusBadge(quote.outcome.outcome)}>{quote.outcome.outcome}</Badge>}
-          </div>
-        </div>
-        <QuoteTabs quoteId={quoteId} />
-      </div>
-
-      <div className="p-6 space-y-5">
+    <div className="p-6 space-y-5">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Add variant form */}
           <Card>
-            <CardHeader label="Add Variant to Graph" />
+            <CardHeader label="Add from catalog" />
             <CardBody>
               <AddVariantForm addVariantAction={addVariantBound} />
-              <p className="mt-2 text-[10px] text-zinc-600">Enter a catalog SKU and quantity to add it as a PRODUCT_VARIANT node.</p>
+              <p className="mt-2 text-[10px] text-zinc-600">
+                Enter a SKU that exists in your catalog and how many to include on this quote.
+              </p>
             </CardBody>
           </Card>
 
           {/* Run evaluation */}
           <Card>
-            <CardHeader label="Evaluation" />
+            <CardHeader label="Pricing and margin check" />
             <CardBody>
               <form action={runEvalBound}>
                 <button
@@ -80,10 +65,10 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
                   disabled={!graph}
                   className="w-full rounded bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 disabled:opacity-40"
                 >
-                  ▶ Run Evaluation
+                  Run pricing
                 </button>
               </form>
-              {!graph && <p className="mt-2 text-[10px] text-zinc-600">Add at least one variant to enable evaluation.</p>}
+              {!graph && <p className="mt-2 text-[10px] text-zinc-600">Add at least one catalog line to run pricing.</p>}
               {latestEval && (
                 <div className="mt-3 space-y-0">
                   <StatRow label="Margin" value={`${latestEval.metrics.overallMarginPct.toFixed(1)}%`}
@@ -97,7 +82,7 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
 
           {/* Graph summary */}
           <Card>
-            <CardHeader label="Graph" />
+            <CardHeader label="Line items" />
             <CardBody>
               {graph ? (
                 <>
@@ -221,7 +206,6 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
               </CardBody>
             </Card>
           )}
-      </div>
     </div>
   );
 }

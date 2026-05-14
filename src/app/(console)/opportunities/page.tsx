@@ -34,16 +34,16 @@ export default async function OpportunitiesPage() {
                 placeholder="Acme Corp" />
             </div>
             <div>
-              <label className="block text-xs text-zinc-400 mb-1">Customer ID</label>
+              <label className="block text-xs text-zinc-400 mb-1">Customer account ID</label>
               <input name="customerId"
                 className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                placeholder="CUS-001" />
+                placeholder="Optional CRM or ERP reference" />
             </div>
             <div>
-              <label className="block text-xs text-zinc-400 mb-1">Sales Owner ID</label>
+              <label className="block text-xs text-zinc-400 mb-1">Owner ID (optional)</label>
               <input name="salesOwnerId"
                 className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                placeholder="user-001" />
+                placeholder="Leave blank to assign yourself" />
             </div>
             <div>
               <label className="block text-xs text-zinc-400 mb-1">Channel</label>

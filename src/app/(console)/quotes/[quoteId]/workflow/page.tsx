@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { submitApproval, advanceWorkflow } from "../../../actions/workflow.actions";
-import { QuoteTabs } from "@/components/console/quote-tabs";
 import { ApprovalForm } from "@/components/console/approval-form";
 import { Card, CardHeader, CardBody, StatRow } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
@@ -43,16 +42,7 @@ export default async function WorkflowTimelinePage({ params }: { params: Promise
     : [];
 
   return (
-    <div className="flex flex-col">
-      <div className="border-b border-zinc-800 bg-zinc-900/50 px-6 pt-4">
-        <div className="mb-3">
-          <h1 className="font-mono text-base font-semibold text-zinc-100">{quote.reference}</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">{quote.currency} · {quoteId.slice(0, 8)}</p>
-        </div>
-        <QuoteTabs quoteId={quoteId} />
-      </div>
-
-      <div className="p-6 space-y-5">
+    <div className="p-6 space-y-5">
         {noWorkflow && (
           <Card>
             <CardBody>
@@ -232,7 +222,6 @@ export default async function WorkflowTimelinePage({ params }: { params: Promise
             </Card>
           </>
         )}
-      </div>
     </div>
   );
 }

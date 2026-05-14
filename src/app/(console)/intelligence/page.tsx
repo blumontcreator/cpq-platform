@@ -45,7 +45,7 @@ export default async function IntelligencePanelPage() {
             <p className="text-sm text-red-400 mb-1">Failed to load intelligence report</p>
             <p className="text-xs text-zinc-500 font-mono">{error}</p>
             <p className="text-xs text-zinc-600 mt-2">
-              Run <code className="bg-zinc-800 px-1 font-mono">npm run intelligence:demo</code> to seed event data.
+              Once your team has loaded import or pricing jobs, summaries and trends appear here automatically.
             </p>
           </CardBody>
         </Card>

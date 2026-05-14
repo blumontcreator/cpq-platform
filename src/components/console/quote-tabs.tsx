@@ -8,11 +8,11 @@ export function QuoteTabs({ quoteId }: { quoteId: string }) {
   const base = `/quotes/${quoteId}`;
 
   const tabs = [
-    { href: base,                  label: "Builder"    },
-    { href: `${base}/simulation`,  label: "Simulation" },
-    { href: `${base}/workflow`,    label: "Workflow"   },
-    { href: `${base}/revisions`,   label: "Revisions"  },
-    { href: `${base}/negotiate`,   label: "Negotiate"  },
+    { href: base,                  label: "Quote & pricing"    },
+    { href: `${base}/simulation`,  label: "Scenarios" },
+    { href: `${base}/workflow`,    label: "Approvals"   },
+    { href: `${base}/revisions`,   label: "History"  },
+    { href: `${base}/negotiate`,   label: "Negotiation"  },
     { href: `${base}/outcome`,     label: "Outcome"    },
   ];
 

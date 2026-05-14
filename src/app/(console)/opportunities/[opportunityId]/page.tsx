@@ -35,8 +35,8 @@ export default async function OpportunityDetailPage({ params }: Props) {
           <CardHeader label="Opportunity Details" />
           <CardBody>
             <StatRow label="Customer" value={opportunity.customerName} />
-            <StatRow label="Customer ID" value={opportunity.customerId} />
-            <StatRow label="Sales Owner" value={opportunity.salesOwnerId} />
+            <StatRow label="Account ref." value={opportunity.customerId} />
+            <StatRow label="Owner (system ID)" value={opportunity.salesOwnerId} />
             <StatRow label="Channel" value={opportunity.channel} />
             <StatRow label="Target Margin" value={`${(opportunity.targetMarginPct * 100).toFixed(1)}%`} accent="green" />
             {opportunity.estimatedRevenue && (
@@ -49,11 +49,11 @@ export default async function OpportunityDetailPage({ params }: Props) {
         </Card>
 
         <Card>
-          <CardHeader label="Execute Lifecycle" />
+          <CardHeader label="Create quote from catalog" />
           <CardBody>
-            <p className="text-xs text-zinc-500 mb-4">
-              Enter catalog SKUs to build the quote graph and run the full commercial evaluation pipeline:
-              pricing → evaluation → optimization → governance → workflow.
+            <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+              Search your catalog, choose line quantities, then create the quote. The platform prices the
+              deal, checks margins against your targets, and opens any required approvals automatically.
             </p>
             <LifecycleForm
               opportunityId={opportunityId}
@@ -90,7 +90,10 @@ export default async function OpportunityDetailPage({ params }: Props) {
         <CardHeader label={`Quotes (${quotes.length})`} />
         <CardBody>
           {quotes.length === 0 ? (
-            <p className="text-sm text-zinc-500">No quotes yet. Execute the lifecycle above to generate one.</p>
+            <p className="text-sm text-zinc-500">
+              No quotes yet. Use <strong className="text-zinc-400">Create quote from catalog</strong> above to
+              generate the first one.
+            </p>
           ) : (
             <div className="space-y-3">
               {quotes.map((q) => {

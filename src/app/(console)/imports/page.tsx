@@ -26,7 +26,8 @@ export default async function ImportsPage() {
         <Card>
           <CardBody>
             <p className="text-sm text-zinc-500 text-center py-4">
-              No supplier imports yet. Run the import pipeline to get started.
+              Import runs will show here after your administrator processes supplier files. Use quotes and
+              outcomes to build history for this workspace.
             </p>
           </CardBody>
         </Card>

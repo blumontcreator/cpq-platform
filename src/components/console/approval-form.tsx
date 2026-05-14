@@ -21,12 +21,8 @@ export function ApprovalForm({
           <select name="decision" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none">
             <option value="APPROVED">Approve</option>
             <option value="REJECTED">Reject</option>
-            <option value="ESCALATED">Escalate</option>
           </select>
-        </div>
-        <div>
-          <label className="block text-xs text-zinc-400 mb-1">Decided By</label>
-          <input name="decidedBy" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100" placeholder="user ID" />
+          <p className="mt-1 text-[10px] text-zinc-600">Your signed-in account is stored as the approver.</p>
         </div>
       </div>
       <div>

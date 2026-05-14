@@ -4,7 +4,6 @@ import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
 import { CloseOutcomeForm } from "@/components/console/lifecycle-form";
-import { QuoteTabs } from "@/components/console/quote-tabs";
 import Link from "next/link";
 import type { QuoteEvaluation } from "@/modules/quoting/types/evaluation.types";
 
@@ -37,16 +36,13 @@ export default async function OutcomePage({ params }: Props) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href={`/quotes/${quoteId}`} className="text-zinc-500 hover:text-zinc-300 text-sm">← Quote</Link>
-        <span className="text-zinc-700">/</span>
-        <span className="text-sm font-mono text-zinc-300">{quote.reference}</span>
-      </div>
-
-      <QuoteTabs quoteId={quoteId} />
-
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-100">Outcome Review</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-100">Outcome</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Compare what you quoted with what happened commercially. This feeds future pricing guidance.
+          </p>
+        </div>
         <Badge variant={statusBadge(quote.status)}>{quote.status}</Badge>
       </div>
 
@@ -118,7 +114,7 @@ export default async function OutcomePage({ params }: Props) {
                 />
               )}
               <p className="text-xs text-zinc-600 mt-3 italic">
-                Learning feedback loop triggered — signals fed into win probability model and strategy ranking.
+                Reported outcomes improve forecasts and playbook suggestions over time.
               </p>
             </CardBody>
           </Card>
@@ -126,9 +122,8 @@ export default async function OutcomePage({ params }: Props) {
           <Card>
             <CardHeader label="Close Outcome" />
             <CardBody>
-              <p className="text-xs text-zinc-500 mb-4">
-                Closing the outcome triggers the learning feedback loop: win probability,
-                strategy ranking, supplier reliability, and pricing confidence are updated.
+              <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+                When the customer decides, record the result here so reporting and guidance stay accurate.
               </p>
               <CloseOutcomeForm closeAction={closeBound} />
             </CardBody>

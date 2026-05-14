@@ -12,15 +12,11 @@ export default function Home() {
         </h1>
         <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-300">
           Foundation is in place: Next.js App Router, Tailwind v3, Prisma 6 with
-          PostgreSQL, and domain-oriented folders under{" "}
+          PostgreSQL, and           domain-oriented modules under{" "}
           <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
-            src/domains
+            src/modules
           </code>
-          . Connect a database, run{" "}
-          <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
-            npm run db:push
-          </code>
-          , then start modeling products and quotes.
+          . Your team loads catalog data, then operators work deals in the console.
         </p>
         <p className="mt-6 text-center text-sm">
           <Link

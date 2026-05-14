@@ -43,7 +43,7 @@ export default async function CatalogPage() {
       {products.length === 0 && (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
           <p className="text-zinc-500 text-sm">No catalog data yet.</p>
-          <p className="text-zinc-600 text-xs mt-1">Run <code className="font-mono bg-zinc-800 px-1">npm run import:a400</code> to seed the catalog.</p>
+        <p className="text-zinc-600 text-xs mt-1">Your administrator can load products and pricing. Then open the catalog or start a new opportunity in the console.</p>
         </div>
       )}
 

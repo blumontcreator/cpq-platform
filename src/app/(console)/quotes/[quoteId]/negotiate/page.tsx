@@ -11,8 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
 import { TracePanel, TraceRow, WarningList } from "@/components/ui/trace-panel";
 import { NegotiationEventForm } from "@/components/console/lifecycle-form";
-import { QuoteTabs } from "@/components/console/quote-tabs";
-import Link from "next/link";
 import type { QuoteEvaluation } from "@/modules/quoting/types/evaluation.types";
 
 interface Props { params: Promise<{ quoteId: string }> }
@@ -69,15 +67,12 @@ export default async function NegotiatePage({ params }: Props) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href={`/quotes/${quoteId}`} className="text-zinc-500 hover:text-zinc-300 text-sm">← Quote</Link>
-        <span className="text-zinc-700">/</span>
-        <span className="text-sm font-mono text-zinc-300">{quote.reference}</span>
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-100">Negotiation</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Log customer asks and concessions. Guidance below uses your latest pricing run when available.
+        </p>
       </div>
-
-      <QuoteTabs quoteId={quoteId} />
-
-      <h1 className="text-lg font-semibold text-zinc-100">Negotiation Workspace</h1>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Concession summary */}

@@ -5,10 +5,6 @@ import { getRevisions } from "@/modules/negotiation";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TracePanel, TraceRow } from "@/components/ui/trace-panel";
-import Link from "next/link";
-import { QuoteTabs } from "@/components/console/quote-tabs";
-
-interface Props { params: Promise<{ quoteId: string }> }
 
 const REASON_COLORS: Record<string, "zinc" | "blue" | "yellow" | "green" | "purple"> = {
   INITIAL: "zinc",
@@ -18,6 +14,8 @@ const REASON_COLORS: Record<string, "zinc" | "blue" | "yellow" | "green" | "purp
   NEGOTIATION: "yellow",
   SCOPE_CHANGE: "purple",
 };
+
+interface Props { params: Promise<{ quoteId: string }> }
 
 export default async function RevisionsPage({ params }: Props) {
   const { quoteId } = await params;
@@ -29,24 +27,20 @@ export default async function RevisionsPage({ params }: Props) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href={`/quotes/${quoteId}`} className="text-zinc-500 hover:text-zinc-300 text-sm">← Quote</Link>
-        <span className="text-zinc-700">/</span>
-        <span className="text-sm font-mono text-zinc-300">{quote.reference}</span>
-      </div>
-
-      <QuoteTabs quoteId={quoteId} />
-
       <div>
-        <h1 className="text-lg font-semibold text-zinc-100">Quote Revision Timeline</h1>
-        <p className="text-xs text-zinc-500 mt-1">{revisions.length} revision(s) — immutable history</p>
+        <h2 className="text-lg font-semibold text-zinc-100">Revision history</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Each revision snapshots the quote when something changed (customer ask, negotiation, internal update).
+          {revisions.length > 0 ? ` ${revisions.length} saved revision(s).` : ""}
+        </p>
       </div>
 
       {revisions.length === 0 ? (
         <Card>
           <CardBody>
             <p className="text-sm text-zinc-500 text-center py-4">
-              No revisions recorded. Execute the lifecycle to create the initial revision.
+              No revisions yet. They appear when you create the quote from an opportunity or change the
+              configuration afterward.
             </p>
           </CardBody>
         </Card>

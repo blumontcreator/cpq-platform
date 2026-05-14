@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { runOptimizationAction } from "../../../actions/simulation.actions";
-import { QuoteTabs } from "@/components/console/quote-tabs";
 import { RunSimulationForm } from "@/components/console/run-simulation-form";
 import { Card, CardHeader, CardBody, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,23 +38,16 @@ export default async function SimulationRunnerPage({ params }: { params: Promise
   const runAction = runOptimizationAction.bind(null, quoteId);
 
   return (
-    <div className="flex flex-col">
-      <div className="border-b border-zinc-800 bg-zinc-900/50 px-6 pt-4">
-        <div className="mb-3">
-          <h1 className="font-mono text-base font-semibold text-zinc-100">{quote.reference}</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">{quote.currency} · {quoteId.slice(0, 8)}</p>
-        </div>
-        <QuoteTabs quoteId={quoteId} />
-      </div>
-
-      <div className="p-6 space-y-5">
+    <div className="p-6 space-y-5">
         {/* Run controls */}
         <Card>
-          <CardHeader label="Run Optimization" />
+          <CardHeader label="What-if scenarios (optional)" />
           <CardBody>
             {hasGraph ? (
               <>
-                <p className="text-xs text-zinc-500 mb-3">Select a strategy to run the optimization engine against this quote&#39;s graph.</p>
+                <p className="text-xs text-zinc-500 mb-3">
+                  Compare pricing strategies on this quote after you have a baseline evaluation on the Builder tab.
+                </p>
                 <RunSimulationForm runAction={runAction} />
                 <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-0 sm:grid-cols-4 text-[10px] text-zinc-600">
                   <div><span className="text-zinc-500">BALANCED</span> — margin + win rate tradeoff</div>
@@ -65,7 +57,7 @@ export default async function SimulationRunnerPage({ params }: { params: Promise
                 </div>
               </>
             ) : (
-              <p className="text-xs text-zinc-600">No graph on this quote yet. Go to the Builder tab and add variants first.</p>
+              <p className="text-xs text-zinc-600">Add line items on the first tab (Quote & pricing) before running scenarios.</p>
             )}
           </CardBody>
         </Card>
@@ -172,7 +164,6 @@ export default async function SimulationRunnerPage({ params }: { params: Promise
             </Card>
           );
         })}
-      </div>
     </div>
   );
 }

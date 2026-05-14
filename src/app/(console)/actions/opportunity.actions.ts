@@ -41,17 +41,47 @@ export async function createOpportunityAction(formData: FormData): Promise<void>
   revalidatePath("/opportunities");
 }
 
+function parseLineItemsFromForm(formData: FormData): { sku: string; quantity: number }[] {
+  const linesJson = (formData.get("linesJson") as string | null)?.trim();
+  if (linesJson) {
+    try {
+      const parsed = JSON.parse(linesJson) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const out: { sku: string; quantity: number }[] = [];
+        for (const row of parsed) {
+          if (!row || typeof row !== "object") continue;
+          const r = row as { sku?: unknown; quantity?: unknown };
+          const sku = String(r.sku ?? "").trim();
+          if (!sku) continue;
+          const qty = Number(r.quantity);
+          const quantity = Number.isFinite(qty)
+            ? Math.max(1, Math.min(9999, Math.floor(qty)))
+            : 1;
+          out.push({ sku, quantity });
+        }
+        const trimmed = out.slice(0, 500);
+        if (trimmed.length > 0) return trimmed;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  const skusRaw =
+    (formData.get("skus") as string)?.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean) ?? [];
+  return skusRaw.map((sku) => ({ sku, quantity: 1 }));
+}
+
 export async function executeLifecycleAction(formData: FormData): Promise<void> {
   const scoped = await requireScopedPrisma();
   const operator = await requireConsoleAuth();
   const opportunityId = formData.get("opportunityId") as string;
-  const skusRaw       = (formData.get("skus") as string)?.split(",").map((s) => s.trim()).filter(Boolean);
+  const items = parseLineItemsFromForm(formData);
 
-  if (!opportunityId || !skusRaw?.length) return;
+  if (!opportunityId || items.length === 0) return;
 
   await executeCommercialLifecycle({
     opportunityId,
-    items: skusRaw.map((sku) => ({ sku, quantity: 1 })),
+    items,
     operatorUserId: operator.userId,
     organizationId: scoped.organizationId,
   });

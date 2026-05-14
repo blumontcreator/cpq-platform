@@ -1,39 +1,21 @@
 "use client";
+
 import { useTransition } from "react";
 
-export function LifecycleForm({
-  opportunityId,
-  runAction,
-}: {
-  opportunityId: string;
-  runAction: (formData: FormData) => Promise<void>;
-}) {
-  const [pending, startTransition] = useTransition();
-  return (
-    <form
-      action={(fd) => { startTransition(() => runAction(fd)); }}
-      className="flex flex-col gap-3"
-    >
-      <input type="hidden" name="opportunityId" value={opportunityId} />
-      <div>
-        <label className="block text-xs text-zinc-400 mb-1">SKUs (comma-separated)</label>
-        <input
-          name="skus"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-          placeholder="A400-BK-001, A400-BK-002"
-          required
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-      >
-        {pending ? "Executing…" : "Execute Commercial Lifecycle"}
-      </button>
-    </form>
-  );
-}
+export {
+  GuidedQuoteFromOpportunityForm,
+  GuidedQuoteFromOpportunityForm as LifecycleForm,
+} from "./guided-quote-from-opportunity-form";
+
+const NEGOTIATION_EVENT_LABELS: Record<string, string> = {
+  CUSTOMER_PRICE_REQUEST: "Customer price request",
+  DISCOUNT_REQUEST: "Discount request",
+  SCOPE_CHANGE: "Scope change",
+  COUNTER_OFFER: "Counter-offer",
+  ACCEPTANCE: "Acceptance",
+  REJECTION: "Rejection",
+  EXPIRY_EXTENSION: "Expiry extension",
+};
 
 export function NegotiationEventForm({
   addEventAction,
@@ -54,13 +36,13 @@ export function NegotiationEventForm({
             className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none"
           >
             {["CUSTOMER_PRICE_REQUEST","DISCOUNT_REQUEST","SCOPE_CHANGE","COUNTER_OFFER","ACCEPTANCE","REJECTION","EXPIRY_EXTENSION"].map((k) => (
-              <option key={k} value={k}>{k.replace(/_/g, " ")}</option>
+              <option key={k} value={k}>{NEGOTIATION_EVENT_LABELS[k] ?? k.replace(/_/g, " ")}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Performed By</label>
-          <input name="performedBy" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100" placeholder="user ID" />
+          <label className="block text-xs text-zinc-400 mb-1">Recorded by</label>
+          <input name="performedBy" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100" placeholder="Your name or initials" />
         </div>
         <div>
           <label className="block text-xs text-zinc-400 mb-1">Requested Value ($)</label>
