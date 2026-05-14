@@ -36,6 +36,12 @@ const ENV_SPEC: EnvVar[] = [
     redact:      true,
   },
   {
+    name:        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    required:    false,
+    description: "Supabase publishable key (preferred over legacy anon JWT in new projects)",
+    redact:      true,
+  },
+  {
     name:        "DIRECT_URL",
     required:    false,
     description: "Direct connection URL for Prisma migrations (bypasses pooler)",

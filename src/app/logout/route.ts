@@ -14,7 +14,7 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
  */
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const redirectUrl = new URL("/login", request.url);
+  const redirectUrl = new URL("/login", request.nextUrl.origin);
   const response = NextResponse.redirect(redirectUrl);
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {

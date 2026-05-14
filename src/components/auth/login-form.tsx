@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
+import { safeNextPath } from "@/lib/navigation/safe-next-path";
 
 const ERROR_COPY: Record<string, string> = {
   config:
@@ -34,7 +35,7 @@ export function LoginForm({ nextPath, errorCode }: Props) {
         setMessage(error.message);
         return;
       }
-      router.push(nextPath.startsWith("/") ? nextPath : "/catalog");
+      router.push(safeNextPath(nextPath, "/catalog"));
       router.refresh();
     } finally {
       setPending(false);

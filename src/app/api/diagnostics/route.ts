@@ -10,12 +10,28 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateEnv } from "@/lib/env";
 import { metrics } from "@/lib/observability/metrics";
+import {
+  clientIpFromRequest,
+  consumeRateToken,
+} from "@/lib/security/simple-rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const start = Date.now();
+
+  const ip = clientIpFromRequest(req);
+  const rl = consumeRateToken(`diagnostics:${ip}`, 45, 60_000);
+  if (!rl.ok) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(rl.retryAfterSec ?? 60),
+      },
+    });
+  }
 
   // Protect with DIAGNOSTICS_SECRET env var (set in production deployment).
   // If not configured, falls back to "open" in development only.

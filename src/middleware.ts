@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNextPath } from "@/lib/navigation/safe-next-path";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -46,7 +47,7 @@ async function fetchTenantGate(
   request: NextRequest,
 ): Promise<{ needsSetup: boolean } | null> {
   try {
-    const gateRes = await fetch(new URL("/api/tenant/gate", request.url), {
+    const gateRes = await fetch(new URL("/api/tenant/gate", request.nextUrl.origin), {
       headers: { cookie: request.headers.get("cookie") ?? "" },
       cache: "no-store",
     });
@@ -71,7 +72,7 @@ export async function middleware(request: NextRequest) {
   const env = supabaseEnv();
   if (!env) {
     if (isProtectedPath(pathname)) {
-      const u = new URL("/login", request.url);
+      const u = new URL("/login", request.nextUrl.origin);
       u.searchParams.set("error", "config");
       return NextResponse.redirect(u);
     }
@@ -102,29 +103,29 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (pathname.startsWith("/setup") && !user) {
-    const u = new URL("/login", request.url);
-    u.searchParams.set("next", "/setup");
+    const u = new URL("/login", request.nextUrl.origin);
+    u.searchParams.set("next", safeNextPath("/setup", "/catalog"));
     return redirectPreservingCookies(response, u);
   }
 
   if (pathname.startsWith("/login") && user) {
     const gate = await fetchTenantGate(request);
     if (gate?.needsSetup) {
-      return redirectPreservingCookies(response, new URL("/setup", request.url));
+      return redirectPreservingCookies(response, new URL("/setup", request.nextUrl.origin));
     }
-    return redirectPreservingCookies(response, new URL("/catalog", request.url));
+    return redirectPreservingCookies(response, new URL("/catalog", request.nextUrl.origin));
   }
 
   if (user && needsTenantGate(pathname)) {
     const gate = await fetchTenantGate(request);
     if (gate?.needsSetup) {
-      return redirectPreservingCookies(response, new URL("/setup", request.url));
+      return redirectPreservingCookies(response, new URL("/setup", request.nextUrl.origin));
     }
   }
 
   if (isProtectedPath(pathname) && !user) {
-    const u = new URL("/login", request.url);
-    u.searchParams.set("next", pathname);
+    const u = new URL("/login", request.nextUrl.origin);
+    u.searchParams.set("next", safeNextPath(pathname, "/catalog"));
     return redirectPreservingCookies(response, u);
   }
 

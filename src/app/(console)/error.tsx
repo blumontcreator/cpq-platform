@@ -9,8 +9,9 @@ interface Props {
 
 export default function ConsoleError({ error, reset }: Props) {
   useEffect(() => {
-    // In production, send to error tracking (Sentry, Datadog)
-    console.error("[ConsoleError]", error.message, error.digest);
+    if (process.env.NODE_ENV === "development") {
+      console.error("[ConsoleError]", error.message, error.digest);
+    }
   }, [error]);
 
   return (
@@ -18,7 +19,9 @@ export default function ConsoleError({ error, reset }: Props) {
       <div className="text-red-400 font-mono text-sm">Error</div>
       <h2 className="text-zinc-100 text-lg font-semibold">Something went wrong</h2>
       <p className="text-zinc-500 text-sm max-w-md text-center">
-        {error.message ?? "An unexpected error occurred in the console."}
+        {process.env.NODE_ENV === "development"
+          ? (error.message ?? "An unexpected error occurred in the console.")
+          : "An unexpected error occurred. Please try again or contact support."}
       </p>
       {error.digest && (
         <p className="font-mono text-[10px] text-zinc-700">digest: {error.digest}</p>

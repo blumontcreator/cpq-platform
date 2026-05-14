@@ -4,17 +4,24 @@ import { getConsoleOperatorContext } from "@/lib/auth/operator-context";
 export const dynamic = "force-dynamic";
 
 /**
- * Edge-middleware helper: indicates whether an authenticated user lacks any
- * organization membership (needs `/setup`).
+ * Middleware helper route: whether the session user still needs `/setup`.
  */
+const noStore = { "Cache-Control": "private, no-store, max-age=0" } as const;
+
 export async function GET() {
   const ctx = await getConsoleOperatorContext();
   if (!ctx) {
-    return NextResponse.json({ authenticated: false, needsSetup: false });
+    return NextResponse.json(
+      { authenticated: false, needsSetup: false },
+      { headers: noStore },
+    );
   }
   const needsSetup =
     ctx.organizationId === undefined ||
     ctx.organizationSlug === undefined ||
     ctx.organizationRole === undefined;
-  return NextResponse.json({ authenticated: true, needsSetup });
+  return NextResponse.json(
+    { authenticated: true, needsSetup },
+    { headers: noStore },
+  );
 }

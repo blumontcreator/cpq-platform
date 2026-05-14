@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getConsoleOperatorContext } from "@/lib/auth";
 import { LoginForm } from "@/components/auth/login-form";
+import { safeNextPath } from "@/lib/navigation/safe-next-path";
 
 export const metadata = { title: "Sign in — CPQ Console" };
 
@@ -26,7 +27,7 @@ export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
   return (
     <LoginForm
-      nextPath={params.next ?? "/catalog"}
+      nextPath={safeNextPath(params.next, "/catalog")}
       errorCode={params.error}
     />
   );

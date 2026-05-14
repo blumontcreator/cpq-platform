@@ -6,7 +6,8 @@
  *   - Container orchestrators (Kubernetes liveness/readiness probes)
  *   - Uptime monitors (BetterStack, Datadog synthetics)
  *
- * GET /api/health → 200 { status: "ok" } | 503 { status: "degraded", errors: [...] }
+ * GET /api/health → liveness (env + DB ping + metrics). Add ?deep=1 for schema counts.
+ * 200 { status: "ok" } | 503 { status: "down" | "degraded", ... }
  */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,11 @@ import { metrics } from "@/lib/observability/metrics";
 export const runtime = "nodejs";
 // Don't cache health checks
 export const dynamic = "force-dynamic";
+
+function safeCheckDetail(message: string, isProd: boolean): string {
+  if (!isProd) return message;
+  return message.length > 160 ? `${message.slice(0, 157)}…` : message;
+}
 
 interface HealthResponse {
   status: "ok" | "degraded" | "down";
@@ -32,9 +38,12 @@ interface HealthCheck {
   detail?: string;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const start = Date.now();
   const checks: HealthCheck[] = [];
+  const isProd = process.env.NODE_ENV === "production";
+  const url = new URL(req.url);
+  const deep = url.searchParams.get("deep") === "1";
 
   // ── 1. Environment validation ────────────────────────────────────────
   const env = validateEnv();
@@ -43,7 +52,7 @@ export async function GET() {
     status: env.valid ? "pass" : "fail",
     detail: env.valid
       ? `${env.summary.filter((s) => s.status === "ok").length}/${env.summary.length} vars present`
-      : env.errors.join("; "),
+      : safeCheckDetail(env.errors.join("; "), isProd),
   });
 
   // ── 2. Database connectivity ─────────────────────────────────────────
@@ -61,28 +70,36 @@ export async function GET() {
       name:      "database",
       status:    "fail",
       latencyMs: Date.now() - dbStart,
-      detail:    err instanceof Error ? err.message : "unknown DB error",
+      detail:    safeCheckDetail(
+        err instanceof Error ? err.message : "unknown DB error",
+        isProd,
+      ),
     });
   }
 
-  // ── 3. Core table accessibility (basic smoke test) ────────────────────
-  try {
-    const counts = await Promise.all([
-      prisma.supplier.count(),
-      prisma.quote.count(),
-      prisma.opportunity.count(),
-    ]);
-    checks.push({
-      name:   "schema",
-      status: "pass",
-      detail: `suppliers=${counts[0]}, quotes=${counts[1]}, opportunities=${counts[2]}`,
-    });
-  } catch (err) {
-    checks.push({
-      name:   "schema",
-      status: "fail",
-      detail: err instanceof Error ? err.message : "schema check failed",
-    });
+  // ── 3. Core table accessibility (optional; use ?deep=1 for synthetic checks) ─
+  if (deep) {
+    try {
+      const counts = await Promise.all([
+        prisma.supplier.count(),
+        prisma.quote.count(),
+        prisma.opportunity.count(),
+      ]);
+      checks.push({
+        name:   "schema",
+        status: "pass",
+        detail: `suppliers=${counts[0]}, quotes=${counts[1]}, opportunities=${counts[2]}`,
+      });
+    } catch (err) {
+      checks.push({
+        name:   "schema",
+        status: "fail",
+        detail: safeCheckDetail(
+          err instanceof Error ? err.message : "schema check failed",
+          isProd,
+        ),
+      });
+    }
   }
 
   // ── 4. Metrics collector ──────────────────────────────────────────────
@@ -110,5 +127,8 @@ export async function GET() {
     latencyMs: Date.now() - start,
   };
 
-  return NextResponse.json(body, { status: httpCode });
+  return NextResponse.json(body, {
+    status: httpCode,
+    headers: { "Cache-Control": "no-store" },
+  });
 }
