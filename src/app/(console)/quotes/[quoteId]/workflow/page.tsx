@@ -9,6 +9,8 @@ import { TracePanel, TraceRow } from "@/components/ui/trace-panel";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
 import { getWorkflowStatus } from "@/modules/workflow";
 import type { WorkflowTransitionRecord } from "@/modules/workflow/types/workflow.types";
+import { WalkthroughHint } from "@/components/console/walkthrough-hint";
+import Link from "next/link";
 
 export async function generateMetadata({ params }: { params: Promise<{ quoteId: string }> }) {
   const { quoteId } = await params;
@@ -43,14 +45,25 @@ export default async function WorkflowTimelinePage({ params }: { params: Promise
 
   return (
     <div className="p-6 space-y-5">
+        <WalkthroughHint title="After approvals">
+          When your queue is clear on this quote, continue in{" "}
+          <Link href={`/quotes/${quoteId}/negotiate`} className="text-blue-400 hover:text-blue-300">
+            Negotiation
+          </Link>{" "}
+          with the customer, then{" "}
+          <Link href={`/quotes/${quoteId}/outcome`} className="text-blue-400 hover:text-blue-300">
+            record the outcome
+          </Link>.
+        </WalkthroughHint>
+
         {noWorkflow && (
           <Card>
             <CardBody>
-              <p className="text-sm text-zinc-500 mb-3">No workflow initialized for this quote.</p>
+              <p className="text-sm text-zinc-500 mb-3">This quote does not have an approval flow yet.</p>
               <form action={advanceBound} className="flex gap-2">
                 <input type="hidden" name="note" value="Initialized from console" />
                 <button type="submit" className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500">
-                  Initialize Workflow
+                  Start approvals
                 </button>
               </form>
             </CardBody>
@@ -99,17 +112,19 @@ export default async function WorkflowTimelinePage({ params }: { params: Promise
               </Card>
 
               <Card>
-                <CardHeader label="Manual Advance" />
+                <CardHeader label="Manual step" />
                 <CardBody>
-                  <p className="text-xs text-zinc-500 mb-3">Force a transition to the next logical state.</p>
+                  <p className="text-xs text-zinc-500 mb-3">
+                    Use when you need to move this quote forward outside the usual approval path.
+                  </p>
                   <form action={advanceBound} className="flex flex-col gap-2">
                     <input
                       name="note"
-                      placeholder="Reason for manual advance"
+                      placeholder="Why you are advancing the step"
                       className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:border-blue-500 focus:outline-none"
                     />
                     <button type="submit" className="rounded bg-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-600">
-                      ▶ Advance
+                      Advance step
                     </button>
                   </form>
                 </CardBody>

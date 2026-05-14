@@ -4,6 +4,7 @@ import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { createQuote } from "../actions/quote.actions";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
+import { WalkthroughHint } from "@/components/console/walkthrough-hint";
 
 export const metadata = { title: "Quotes — CPQ Console" };
 
@@ -31,6 +32,10 @@ export default async function QuotesPage() {
           <p className="text-xs text-zinc-500 mt-0.5">{quotes.length} quotes</p>
         </div>
       </div>
+
+      <WalkthroughHint title="Quote workflow">
+        Use <strong className="text-zinc-300">New quote</strong> for an empty shell, or start from an opportunity to price in one step. After lines exist: run pricing → clear approvals → log negotiation → record outcome.
+      </WalkthroughHint>
 
       {/* Create quote form */}
       <Card>
@@ -63,7 +68,10 @@ export default async function QuotesPage() {
       <Card>
         <CardHeader label="All Quotes" />
         {quotes.length === 0 ? (
-          <div className="p-6 text-center text-xs text-zinc-600">No quotes yet — create one above.</div>
+          <div className="p-6 text-center text-xs text-zinc-500">
+            No quotes yet. Create one above, or seed demo data with{" "}
+            <code className="text-zinc-400">npm run demo:seed</code>.
+          </div>
         ) : (
           <div className="divide-y divide-zinc-800/50">
             {quotes.map((q) => {
@@ -88,7 +96,7 @@ export default async function QuotesPage() {
                   )}
                   <span className="flex-1" />
                   <span className="font-mono text-[10px] text-zinc-600">{q.currency}</span>
-                  {hasGraph && <span className="text-[10px] text-zinc-600">graph ✓</span>}
+                  {hasGraph && <span className="text-[10px] text-emerald-600/90">priced</span>}
                   <span className="font-mono text-[10px] text-zinc-600">
                     {new Date(q.createdAt).toISOString().slice(0, 10)}
                   </span>

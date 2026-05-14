@@ -18,7 +18,8 @@
     "simulate:demo": "tsx scripts/simulation-demo.ts",
     "intelligence:demo": "tsx scripts/intelligence-demo.ts",
     "workflow:demo": "tsx scripts/workflow-demo.ts",
-    "auth:verify": "tsx scripts/verify-supabase-auth.ts"
+    "auth:verify": "tsx scripts/verify-supabase-auth.ex.ts",
+    "demo:seed": "tsx src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

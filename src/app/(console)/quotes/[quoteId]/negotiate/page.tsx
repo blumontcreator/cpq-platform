@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
 import { TracePanel, TraceRow, WarningList } from "@/components/ui/trace-panel";
 import { NegotiationEventForm } from "@/components/console/lifecycle-form";
+import { WalkthroughHint } from "@/components/console/walkthrough-hint";
+import Link from "next/link";
 import type { QuoteEvaluation } from "@/modules/quoting/types/evaluation.types";
 
 interface Props { params: Promise<{ quoteId: string }> }
@@ -98,7 +100,7 @@ export default async function NegotiatePage({ params }: Props) {
         {/* Negotiation guidance */}
         {guidance && (
           <Card>
-            <CardHeader label="Negotiation Assistant" />
+            <CardHeader label="Coaching hints" />
             <CardBody>
               <StatRow label="Current Price" value={`$${guidance.suggestedCounterOffer ? totalRevenue.toFixed(2) : "—"}`} />
               <StatRow label="Suggested Floor" value={`$${guidance.suggestedFloor.toFixed(2)}`} accent="red" />
@@ -141,12 +143,24 @@ export default async function NegotiatePage({ params }: Props) {
         </Card>
       )}
 
+      {!concessions.isClosed && (
+        <WalkthroughHint title="Next recommended step">
+          When the customer decides, record the result on the{" "}
+          <Link href={`/quotes/${quoteId}/outcome`} className="text-blue-400 hover:text-blue-300">
+            outcome
+          </Link>{" "}
+          tab so win/loss history stays accurate.
+        </WalkthroughHint>
+      )}
+
       {/* Timeline */}
       <Card>
         <CardHeader label={`Negotiation Timeline (${timeline.length})`} />
         <CardBody>
           {timeline.length === 0 ? (
-            <p className="text-sm text-zinc-500">No events yet.</p>
+              <p className="text-sm text-zinc-500">
+                No events yet. Add notes as the conversation moves — each entry builds your deal history.
+              </p>
           ) : (
             <div className="space-y-2">
               {[...timeline].reverse().map((ev) => (

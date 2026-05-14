@@ -44,9 +44,10 @@ export function QuoteNextStepsBanner(props: QuoteNextStepsInput) {
     cta = "Open quote builder";
   } else if (!hasEvaluation) {
     title = "Next: run pricing";
-    detail = "Evaluation rolls up margin, revenue, and any approval rules for this configuration.";
+    detail =
+      "Pricing rolls up margin and revenue, and opens any required approvals based on your rules.";
     href = `/quotes/${quoteId}`;
-    cta = "Run evaluation on builder";
+    cta = "Run pricing on quote builder";
   } else if (pendingApprovals > 0) {
     title = `Next: approvals (${pendingApprovals})`;
     detail = "A pricing or discount decision needs sign-off before you treat this quote as final.";

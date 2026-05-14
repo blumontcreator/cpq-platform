@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { requireConsoleAuth } from "@/lib/auth/guards";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/modules/negotiation";
 import { closeQuoteOutcome } from "@/modules/lifecycle";
 import type { NegotiationEventKind } from "@/modules/negotiation/types";
+import { withNotice } from "@/lib/ui/url-notice";
 
 export async function recordNegotiationEventAction(
   quoteId: string,
@@ -22,7 +24,15 @@ export async function recordNegotiationEventAction(
   const concessionNote   = formData.get("concessionNote") as string | undefined;
   const performedBy      = formData.get("performedBy") as string | undefined;
 
-  if (!quoteId || !kind) return;
+  if (!quoteId || !kind) {
+    redirect(
+      withNotice(
+        quoteId ? `/quotes/${quoteId}/negotiate` : "/quotes",
+        "error",
+        "Pick what happened in the discussion before saving.",
+      ),
+    );
+  }
 
   await recordNegotiationEvent(scoped.prisma, {
     quoteId, kind, requestedValue, requestedDiscount,
@@ -32,6 +42,13 @@ export async function recordNegotiationEventAction(
   });
 
   revalidatePath(`/quotes/${quoteId}/negotiate`);
+  redirect(
+    withNotice(
+      `/quotes/${quoteId}/negotiate`,
+      "success",
+      "Negotiation note saved.",
+    ),
+  );
 }
 
 export async function createRevisionAction(
@@ -47,7 +64,9 @@ export async function createRevisionAction(
     where:  { id: quoteId },
     select: { graph: true },
   });
-  if (!quote) return;
+  if (!quote) {
+    redirect(withNotice("/quotes", "error", "Quote not found."));
+  }
 
   await createRevision(scoped.prisma, {
     quoteId,
@@ -58,6 +77,13 @@ export async function createRevisionAction(
   });
 
   revalidatePath(`/quotes/${quoteId}/revisions`);
+  redirect(
+    withNotice(
+      `/quotes/${quoteId}/revisions`,
+      "success",
+      "Revision saved.",
+    ),
+  );
 }
 
 export async function closeOutcomeAction(
@@ -72,7 +98,15 @@ export async function closeOutcomeAction(
   const lossReason      = formData.get("lossReason") as string | undefined;
   const competitorPrice = formData.get("competitorPrice")   ? parseFloat(formData.get("competitorPrice") as string) : undefined;
 
-  if (!quoteId || !outcome) return;
+  if (!quoteId || !outcome) {
+    redirect(
+      withNotice(
+        quoteId ? `/quotes/${quoteId}/outcome` : "/quotes",
+        "error",
+        "Select an outcome before closing the quote.",
+      ),
+    );
+  }
 
   await closeQuoteOutcome({
     quoteId, outcome, realizedRevenue, realizedMarginPct,
@@ -84,4 +118,11 @@ export async function closeOutcomeAction(
 
   revalidatePath(`/quotes/${quoteId}/outcome`);
   revalidatePath(`/quotes/${quoteId}`);
+  redirect(
+    withNotice(
+      `/quotes/${quoteId}/outcome`,
+      "success",
+      "Outcome recorded for this quote.",
+    ),
+  );
 }

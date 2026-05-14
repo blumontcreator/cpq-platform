@@ -4,6 +4,7 @@ import { submitApproval } from "../actions/workflow.actions";
 import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApprovalForm } from "@/components/console/approval-form";
+import { WalkthroughHint } from "@/components/console/walkthrough-hint";
 import Link from "next/link";
 
 const KIND_LABELS: Record<string, string> = {
@@ -52,6 +53,10 @@ export default async function ApprovalsPage() {
         </p>
       </div>
 
+      <WalkthroughHint title="Approval inbox">
+        Decide open items here, then return to the quote’s <strong className="text-zinc-300">Negotiation</strong> tab when you are back with the customer. Pending items also appear on each quote’s workflow screen.
+      </WalkthroughHint>
+
       {/* Pending approvals */}
       {pendingApprovals.length > 0 ? (
         <div className="space-y-4">
@@ -63,14 +68,14 @@ export default async function ApprovalsPage() {
               <Card key={a.id} className="border-yellow-700/40">
                 <CardHeader
                   label={KIND_LABELS[a.kind] ?? a.kind}
-                  actions={<Badge variant={KIND_COLORS[a.kind] ?? "zinc"}>{a.kind}</Badge>}
+                  actions={<Badge variant={KIND_COLORS[a.kind] ?? "zinc"}>{KIND_LABELS[a.kind] ?? a.kind}</Badge>}
                 />
                 <CardBody>
                   <div className="grid grid-cols-2 gap-x-8 mb-4">
                     <StatRow label="Quote" value={
                       <Link href={`/quotes/${quoteId}`} className="text-blue-400 hover:text-blue-300 font-mono text-xs">{quoteId}</Link>
                     } />
-                    <StatRow label="Workflow State" value={a.workflow.currentState} />
+                    <StatRow label="Quote stage" value={a.workflow.currentState} />
                     <StatRow label="Required Role" value={a.requiredRole} />
                     <StatRow label="Stage" value={`Stage ${a.stage}`} />
                     {a.requestedBy && <StatRow label="Requested By" value={a.requestedBy} />}
@@ -91,7 +96,12 @@ export default async function ApprovalsPage() {
       ) : (
         <Card>
           <CardBody>
-            <p className="text-sm text-zinc-500 text-center py-4">No pending approvals.</p>
+            <p className="text-sm text-zinc-500 text-center py-4">
+              Nothing waiting on you. Check{" "}
+              <Link className="text-blue-400 hover:text-blue-300" href="/quotes">quotes</Link>
+              {" "}for the next step, or seed demo data with{" "}
+              <code className="text-zinc-400">npm run demo:seed</code>.
+            </p>
           </CardBody>
         </Card>
       )}
@@ -121,7 +131,7 @@ export default async function ApprovalsPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-2">
-                      <Badge variant={KIND_COLORS[a.kind] ?? "zinc"} >{a.kind}</Badge>
+                      <Badge variant={KIND_COLORS[a.kind] ?? "zinc"}>{KIND_LABELS[a.kind] ?? a.kind}</Badge>
                     </td>
                     <td className="px-4 py-2">
                       <Badge variant={a.status === "APPROVED" ? "green" : a.status === "REJECTED" ? "red" : "yellow"}>

@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader, StatRow } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
 import { ConfidenceBar } from "@/components/ui/confidence-bar";
 import { LifecycleForm } from "@/components/console/lifecycle-form";
+import { WalkthroughHint } from "@/components/console/walkthrough-hint";
 import Link from "next/link";
 
 interface Props { params: Promise<{ opportunityId: string }> }
@@ -30,13 +31,17 @@ export default async function OpportunityDetailPage({ params }: Props) {
         <span className="text-sm text-zinc-300 font-mono">{opportunity.reference}</span>
       </div>
 
+      <WalkthroughHint title="Next recommended step">
+        Build a <strong className="text-zinc-300">priced quote</strong> from the catalog (right). The platform runs pricing, checks margin, and opens approvals when needed. Then follow the banner on the quote to negotiate and close.
+      </WalkthroughHint>
+
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader label="Opportunity Details" />
           <CardBody>
             <StatRow label="Customer" value={opportunity.customerName} />
             <StatRow label="Account ref." value={opportunity.customerId} />
-            <StatRow label="Owner (system ID)" value={opportunity.salesOwnerId} />
+            <StatRow label="Deal owner" value={opportunity.salesOwnerId} />
             <StatRow label="Channel" value={opportunity.channel} />
             <StatRow label="Target Margin" value={`${(opportunity.targetMarginPct * 100).toFixed(1)}%`} accent="green" />
             {opportunity.estimatedRevenue && (
@@ -142,8 +147,9 @@ export default async function OpportunityDetailPage({ params }: Props) {
                         </div>
                       )}
                       <div className="flex flex-col gap-1">
-                        <Link href={`/quotes/${q.id}`} className="text-xs text-zinc-400 hover:text-zinc-200">Builder →</Link>
-                        <Link href={`/quotes/${q.id}/negotiate`} className="text-xs text-zinc-400 hover:text-zinc-200">Negotiate →</Link>
+                        <Link href={`/quotes/${q.id}`} className="text-xs text-zinc-400 hover:text-zinc-200">Quote →</Link>
+                        <Link href={`/quotes/${q.id}/workflow`} className="text-xs text-zinc-400 hover:text-zinc-200">Approvals →</Link>
+                        <Link href={`/quotes/${q.id}/negotiate`} className="text-xs text-zinc-400 hover:text-zinc-200">Negotiation →</Link>
                         <Link href={`/quotes/${q.id}/outcome`} className="text-xs text-zinc-400 hover:text-zinc-200">Outcome →</Link>
                       </div>
                     </div>

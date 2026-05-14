@@ -60,11 +60,13 @@ export default async function OutcomePage({ params }: Props) {
                   <StatRow label="Margin %" value={`${(quotedMarginPct * 100).toFixed(1)}%`}
                     accent={quotedMarginPct >= 0.3 ? "green" : quotedMarginPct >= 0.15 ? "yellow" : "red"} />
                 )}
-                <StatRow label="Nodes" value={latestEval?.nodeEvaluations?.length ?? "—"} />
-                <StatRow label="Confidence" value={`${((latestEval?.confidence ?? 0) * 100).toFixed(0)}%`} />
+                <StatRow label="Lines priced" value={latestEval?.nodeEvaluations?.length ?? "—"} />
+                <StatRow label="Pricing confidence" value={`${((latestEval?.confidence ?? 0) * 100).toFixed(0)}%`} />
               </>
             ) : (
-              <p className="text-sm text-zinc-500">No evaluation on record.</p>
+              <p className="text-sm text-zinc-500">
+                No pricing run on record. Open this quote’s builder and run pricing before comparing outcomes.
+              </p>
             )}
           </CardBody>
         </Card>

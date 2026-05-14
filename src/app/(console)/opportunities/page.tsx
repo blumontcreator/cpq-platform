@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { listOpportunities } from "@/modules/opportunity";
 import { createOpportunityAction } from "../actions/opportunity.actions";
+import { WalkthroughHint } from "@/components/console/walkthrough-hint";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, statusBadge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -22,6 +23,15 @@ export default async function OpportunitiesPage() {
         </div>
       </div>
 
+      <WalkthroughHint variant="start" title="Deals start as opportunities">
+        <p>
+          After <span className="font-mono text-zinc-500">npm run demo:seed</span>, open any seeded deal to try a full quote.
+          <span className="block mt-1 text-zinc-500">
+            Next recommended step: open an opportunity → build a priced quote from the catalog.
+          </span>
+        </p>
+      </WalkthroughHint>
+
       {/* Create opportunity */}
       <Card>
         <CardHeader label="New Opportunity" />
@@ -40,10 +50,10 @@ export default async function OpportunitiesPage() {
                 placeholder="Optional CRM or ERP reference" />
             </div>
             <div>
-              <label className="block text-xs text-zinc-400 mb-1">Owner ID (optional)</label>
+              <label className="block text-xs text-zinc-400 mb-1">Deal owner (optional)</label>
               <input name="salesOwnerId"
                 className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                placeholder="Leave blank to assign yourself" />
+                placeholder="User ID, or leave blank for you" />
             </div>
             <div>
               <label className="block text-xs text-zinc-400 mb-1">Channel</label>
@@ -89,7 +99,9 @@ export default async function OpportunitiesPage() {
       {/* Opportunity list */}
       <div className="space-y-3">
         {opportunities.length === 0 ? (
-          <p className="text-sm text-zinc-500">No opportunities yet. Create one above.</p>
+          <p className="text-sm text-zinc-500">
+            No opportunities yet. Create one above, or run <code className="text-zinc-400">npm run demo:seed</code> for a full sample pipeline.
+          </p>
         ) : (
           opportunities.map((opp) => (
             <Link key={opp.id} href={`/opportunities/${opp.id}`}>

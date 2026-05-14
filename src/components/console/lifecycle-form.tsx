@@ -30,7 +30,7 @@ export function NegotiationEventForm({
     >
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Event Kind</label>
+          <label className="block text-xs text-zinc-400 mb-1">Activity type</label>
           <select
             name="kind"
             className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none"

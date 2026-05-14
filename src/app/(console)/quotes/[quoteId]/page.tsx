@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireScopedPrisma } from "@/lib/db/scoped-prisma";
 import { addVariantToGraph, runQuoteEvaluation } from "../../actions/quote.actions";
 import { AddVariantForm } from "@/components/console/add-variant-form";
+import { RunPricingForm } from "@/components/console/run-pricing-form";
 import { Card, CardHeader, CardBody, StatRow } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TracePanel, TraceRow, WarningList } from "@/components/ui/trace-panel";
@@ -55,26 +56,21 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
             </CardBody>
           </Card>
 
-          {/* Run evaluation */}
+          {/* Pricing run */}
           <Card>
             <CardHeader label="Pricing and margin check" />
             <CardBody>
-              <form action={runEvalBound}>
-                <button
-                  type="submit"
-                  disabled={!graph}
-                  className="w-full rounded bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 disabled:opacity-40"
-                >
-                  Run pricing
-                </button>
-              </form>
+              <RunPricingForm action={runEvalBound} hasGraph={!!graph} />
               {!graph && <p className="mt-2 text-[10px] text-zinc-600">Add at least one catalog line to run pricing.</p>}
               {latestEval && (
                 <div className="mt-3 space-y-0">
                   <StatRow label="Margin" value={`${latestEval.metrics.overallMarginPct.toFixed(1)}%`}
                     accent={latestEval.metrics.overallMarginPct >= 25 ? "green" : latestEval.metrics.overallMarginPct >= 15 ? "yellow" : "red"} />
                   <StatRow label="Revenue" value={`${quote.currency} ${latestEval.metrics.totalRevenue.toFixed(0)}`} />
-                  <StatRow label="Confidence" value={latestEval.confidence.toFixed(2)} />
+                  <StatRow
+                    label="Confidence"
+                    value={`${(Math.min(1, Math.max(0, latestEval.confidence)) * 100).toFixed(0)}%`}
+                  />
                 </div>
               )}
             </CardBody>
@@ -86,12 +82,12 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
             <CardBody>
               {graph ? (
                 <>
-                  <StatRow label="Nodes" value={graph.nodes.length} />
-                  <StatRow label="Edges" value={graph.edges.length} />
+                  <StatRow label="Catalog lines" value={graph.nodes.length} />
+                  <StatRow label="Bundle links" value={graph.edges.length} />
                   <StatRow label="Currency" value={graph.context?.currency ?? quote.currency} />
                 </>
               ) : (
-                <p className="text-xs text-zinc-600">No graph yet. Add variants to start.</p>
+                <p className="text-xs text-zinc-600">No lines yet. Add SKUs above to start the quote.</p>
               )}
             </CardBody>
           </Card>
@@ -100,12 +96,12 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
         {/* Graph nodes table */}
         {graph && graph.nodes.length > 0 && (
           <Card>
-            <CardHeader label={`Nodes (${graph.nodes.length})`} />
+            <CardHeader label={`Quote lines (${graph.nodes.length})`} />
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-500">
-                    <th className="px-4 py-2 text-left font-medium">Kind</th>
+                    <th className="px-4 py-2 text-left font-medium">Line type</th>
                     <th className="px-4 py-2 text-left font-medium">Label</th>
                     <th className="px-4 py-2 text-left font-medium">SKU</th>
                     <th className="px-4 py-2 text-right font-medium">Qty</th>
@@ -148,7 +144,7 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
         {/* Edges */}
         {graph && graph.edges.length > 0 && (
           <Card>
-            <CardHeader label={`Edges (${graph.edges.length})`} />
+            <CardHeader label={`Bundle links (${graph.edges.length})`} />
             <div className="divide-y divide-zinc-800/50">
               {graph.edges.map((edge) => (
                 <div key={edge.id} className="flex items-center gap-3 px-4 py-2 text-xs">
@@ -166,7 +162,7 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
         {/* Latest evaluation */}
           {latestEval && (
             <Card>
-              <CardHeader label="Latest Evaluation" actions={
+              <CardHeader label="Latest pricing run" actions={
                 <div className="w-32"><ConfidenceBar value={latestEval.confidence} /></div>
               } />
               <CardBody>
@@ -176,13 +172,13 @@ export default async function QuoteBuilderPage({ params }: { params: Promise<{ q
                   <StatRow label="Gross margin" value={`${quote.currency} ${latestEval.metrics.totalMargin.toFixed(0)}`} accent="green" />
                   <StatRow label="Margin %" value={`${latestEval.metrics.overallMarginPct.toFixed(1)}%`}
                     accent={latestEval.metrics.overallMarginPct >= 25 ? "green" : "yellow"} />
-                  <StatRow label="Nodes" value={latestEval.nodeEvaluations.length} />
+                  <StatRow label="Lines in quote" value={latestEval.nodeEvaluations.length} />
                   <StatRow label="Lead time" value={`${latestEval.metrics.criticalPathLeadTimeDays}d`} />
                   <StatRow label="Freight groups" value={latestEval.metrics.freightGroups.length} />
                 </div>
 
                 {latestEval.trace && latestEval.trace.steps.length > 0 && (
-                  <TracePanel label={`Evaluator trace (${latestEval.trace.steps.length} steps)`} className="mt-3">
+                  <TracePanel label={`Pricing steps (${latestEval.trace.steps.length})`} className="mt-3">
                     {latestEval.trace.steps.map((t) => (
                       <TraceRow key={t.step} label={t.evaluator} value={t.note} />
                     ))}
